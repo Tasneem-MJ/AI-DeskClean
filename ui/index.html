@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI-DeskClean</title>
+<script src="vendor/react.production.min.js"></script>
+<script src="vendor/react-dom.production.min.js"></script>
+<script src="vendor/babel.min.js"></script>
+<style>@font-face{font-family:'The Year of the Camel';src:local('The Year of the Camel'),local('CAMEL THE OF YEAR THE');font-display:swap}</style>
+<style>
+  :root{--kau-dark:#055934;--kau-primary:#208D44;--kau-lime:#86C242;--kau-light:#D3E6BE;--kau-offwhite:#F0EEE9;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'The Year of the Camel','Alexandria',sans-serif;background:#F0EEE9;overflow:hidden}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:#F0EEE9}
+  ::-webkit-scrollbar-thumb{background:#D3E6BE;border-radius:3px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes pulseGlow{0%,100%{box-shadow:0 0 10px rgba(134,194,66,.2)}50%{box-shadow:0 0 25px rgba(134,194,66,.6)}}
+  .spin{animation:spin 1s linear infinite}
+  .fade-in{animation:fadeIn 0.35s ease both}
+  .pulse-glow{animation:pulseGlow 2s ease-in-out infinite}
+  input[type=range]{-webkit-appearance:none;height:6px;border-radius:9999px;outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#208D44;cursor:pointer}
+  .toggle{position:relative;display:inline-block;width:40px;height:22px}
+  .toggle input{opacity:0;width:0;height:0}
+  .slider{position:absolute;cursor:pointer;inset:0;background:#d1d5db;border-radius:9999px;transition:.3s}
+  .slider:before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:white;border-radius:50%;transition:.3s}
+  input:checked+.slider{background:#208D44}
+  input:checked+.slider:before{transform:translateX(18px)}
+  .progress-bar{height:8px;background:#D3E6BE;border-radius:9999px;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#208D44,#86C242);border-radius:9999px;transition:width .4s ease}
+  .dialog-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center}
+  .dialog-box{background:white;border-radius:20px;padding:28px;max-width:440px;width:90%;border:1.5px solid #D3E6BE;box-shadow:0 20px 60px rgba(5,89,52,.2)}
+  .badge{display:inline-flex;align-items:center;padding:2px 10px;border-radius:9999px;font-size:10px;font-weight:700}
+  .chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:8px;font-size:10px;font-weight:600;background:#F0EEE9;color:#208D44}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#055934;color:white;padding:10px 24px;border-radius:9999px;font-size:13px;font-weight:500;z-index:9999;pointer-events:none;animation:fadeIn .3s ease}
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;padding:8px 12px;font-size:10px;font-weight:700;color:#208D44;text-transform:uppercase;letter-spacing:.05em;background:#F7F6F2;border-bottom:1px solid #D3E6BE}
+  td{padding:8px 12px;font-size:11px;border-bottom:1px solid #ECEFE8}
+  tr:hover td{background:#f9f6fd}
+  .stat-card{background:white;border-radius:16px;border:1px solid #D3E6BE;padding:14px;display:flex;flex-direction:column;gap:4px}
+  .section-card{background:white;border-radius:16px;border:1px solid #D3E6BE;overflow:hidden}
+  .section-title{padding:10px 20px;border-bottom:1px solid #E4EDDA;background:#F7F6F2;font-size:11px;font-weight:700;color:#208D44;text-transform:uppercase;letter-spacing:.08em}
+  .setting-row{display:flex;align-items:center;gap:16px;padding:14px 20px;border-bottom:1px solid #ECEFE8}
+  .setting-row:last-child{border-bottom:none}
+  .setting-icon{width:32px;height:32px;border-radius:10px;background:#F0EEE9;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .btn-primary{background:#208D44;color:white;border:none;border-radius:12px;padding:10px 22px;font-family:'The Year of the Camel','Alexandria',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s}
+  .btn-primary:hover{background:#055934}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+  .btn-outline{background:transparent;color:#208D44;border:1.5px solid #208D44;border-radius:12px;padding:9px 20px;font-family:'The Year of the Camel','Alexandria',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s}
+  .btn-outline:hover{background:#208D44;color:white}
+  .btn-ghost{background:transparent;color:#66756B;border:1.5px solid #C7D9BE;border-radius:12px;padding:9px 20px;font-family:'The Year of the Camel','Alexandria',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .2s}
+  .btn-ghost:hover{background:#F0EEE9}
+  .btn-danger{background:transparent;color:#dc2626;border:1.5px solid #fca5a5;border-radius:12px;padding:9px 20px;font-family:'The Year of the Camel','Alexandria',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s}
+  .btn-danger:hover{background:#fef2f2}
+  .input-field{width:100%;padding:10px 14px;border:1.5px solid #D3E6BE;border-radius:12px;font-family:'The Year of the Camel','Alexandria',sans-serif;font-size:13px;color:#183A2A;background:white;outline:none;transition:border .2s}
+  .input-field:focus{border-color:#208D44;box-shadow:0 0 0 3px rgba(32,141,68,.1)}
+  .select-field{width:100%;padding:10px 14px;border:1.5px solid #D3E6BE;border-radius:12px;font-family:'The Year of the Camel','Alexandria',sans-serif;font-size:13px;color:#183A2A;background:white;outline:none;cursor:pointer}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;color:rgba(255,255,255,.6);border:none;background:transparent;width:100%;font-family:'The Year of the Camel','Alexandria',sans-serif}
+  .nav-item:hover{background:rgba(255,255,255,.1);color:white}
+  .nav-item.active{background:#208D44;color:white}
+  .card-hover{transition:all .2s;cursor:pointer}
+  .card-hover:hover{border-color:#D3E6BE!important;box-shadow:0 4px 20px rgba(32,141,68,.1)}
+  .action-card{background:white;border-radius:16px;border:1px solid #D3E6BE;padding:18px;display:flex;flex-direction:column;gap:12px;cursor:pointer;transition:all .2s;text-align:left}
+  .action-card:hover{border-color:#D3E6BE;box-shadow:0 4px 20px rgba(32,141,68,.1)}
+  /* RTL */
+  [dir=rtl] th{text-align:right}
+  [dir=rtl] td{text-align:right}
+  [dir=rtl] .setting-row{flex-direction:row-reverse;text-align:right}
+  [dir=rtl] .nav-item{flex-direction:row-reverse;text-align:right}
+  [dir=rtl] .action-card{text-align:right}
+  [dir=rtl] input[type=range]{direction:ltr}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ─── Icons (inline SVG) ─────────────────────────────────────────── */
+const I = {
+  menu:    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
+  bell:    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,
+  settings:<svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+  user:    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  logout:  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+  folder:  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>,
+  report:  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+  history: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>,
+  restore: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>,
+  help:    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+  dashboard:<svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+  brain:   <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2z"/></svg>,
+  shield:  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  check:   <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>,
+  x:       <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  minus:   <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  maximize:<svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>,
+  minimize:<svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="21" y2="3"/><line x1="3" y1="21" x2="14" y2="10"/></svg>,
+  back:    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+  eye:     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+  eyeoff:  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>,
+  warn:    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+  ok:      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>,
+  search:  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  plus:    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  spin1:   <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" style={{animation:'spin 1s linear infinite'}}><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" strokeOpacity=".25"/><path d="M21 12a9 9 0 0 0-9-9" stroke="#208D44"/></svg>,
+  download:<svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+  print:   <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
+  undo:    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>,
+  save:    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+  chevup:  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>,
+  chevdn:  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>,
+  zap:     <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+  lock:    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+  info:    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
+  db:      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
+  layers:  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>,
+  sparkles:<svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+  cpu:     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>,
+  wifi0:   <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>,
+};
+
+/* ─── Translations ─────────────────────────────────────────────── */
+const dict = {
+  en:{
+    title:"AI-DeskClean",subtitle:"AI-Powered Local File Management",
+    welcome_title:"Welcome to AI-DeskClean",welcome_desc:"A local file management tool that organizes your files on this computer using AI and file-type rules. Nothing is uploaded anywhere.",
+    get_started:"Get Started",exit:"Exit",lang_title:"Select Your Language",continue:"Continue",back:"Back",cancel:"Cancel",
+    privacy_title:"Privacy Policy",privacy_accept:"I have read and accept the Privacy Policy.",privacy_subtitle:"AI-DeskClean is designed with your privacy as the top priority.",
+    priv_local_title:"Local Processing",priv_local_desc:"All file analysis happens locally on the user's device.",
+    priv_nocloud_title:"No Cloud Upload",priv_nocloud_desc:"Files are never uploaded to external servers.",
+    priv_folder_title:"Restricted Folder Access",priv_folder_desc:"The system only accesses folders you explicitly select.",
+    priv_sysfile_title:"System File Protection",priv_sysfile_desc:"Protected and hidden files are automatically ignored.",
+    priv_data_title:"Local Account Data",priv_data_desc:"Profiles, settings, and reports are stored locally.",
+    priv_ai_title:"AI Privacy",priv_ai_desc:"Only limited extracted content is analyzed locally.",
+    dashboard:"Dashboard",organize_files:"Organize Files",history:"History",nav_reports:"Reports",
+    settings:"Settings",help:"Help",
+    welcome_back:"Welcome back",ready:"Your local file management system is ready.",
+    start_scan:"Start New Scan",org_history:"History & Reports",
+    action_scan_desc:"Choose a folder and organize it with AI",action_history_desc:"View past operations, reports, and restore files",
+    local_mode:"Local Mode",
+    ai_status_title:"AI System Status",
+    ai_status_desc:"AI-DeskClean scans and classifies files entirely on this computer. When the local AI model isn't available, files are still organized automatically using file-type rules.",
+    local_only_notice:"All operations are performed locally. No data is sent to external servers.",
+    undo_confirm_text:"This will move the files from the last organize operation back to where they were. This action cannot be undone.",
+    confirm_undo_btn:"Confirm Undo",
+    restored_files_msg:"Restored {n} file(s).",
+    undo_failed_msg:"Undo failed.",
+    restore_failed_msg:"Restore failed.",
+    bridge_not_ready:"The desktop bridge is not ready yet. Please try again in a moment.",
+    could_not_open_folder_picker:"Could not open the folder picker.",
+    could_not_open_folder:"Could not open the folder.",
+    folder_not_usable:"This folder cannot be used. Please choose a specific folder rather than a whole drive or system directory.",
+    scan_failed:"Scan failed.",
+    classification_failed:"Classification failed.",
+    organize_failed:"Organize failed.",
+    loading_system:"Loading system…",
+    folder_title:"Choose a Folder to Organize",folder_desc:"Select a folder that AI-DeskClean is allowed to scan and organize.",
+    start_scan_btn:"Start Scan",back_dashboard:"Back to Dashboard",
+    click_choose_different:"Click to choose a different folder",
+    opening_folder_picker:"Opening folder picker…",
+    click_choose_folder:"Click to choose a folder…",
+    scan_options_title:"Scan Options",include_subfolders:"Include subfolders",
+    hidden_files_note:"Hidden and protected system files are always skipped automatically.",
+    permission_title:"Confirm Folder Access",grant_access:"Grant Access & Start",
+    permission_desc:"AI-DeskClean will access only the selected folder and its permitted subfolders.",
+    selected_folder_label:"Selected folder",include_subfolders_label:"Include subfolders",
+    yes_value:"Yes",no_value:"No",hidden_files_label:"Hidden files",always_ignored:"Always ignored",
+    system_files_label:"System files",always_protected:"Always protected",
+    scanning_title:"Scanning Your Files",ai_title:"AI Classification in Progress",
+    scanning_desc:"Reading files and folder metadata…",
+    ai_desc:"Analyzing file names, metadata, and limited content samples.",
+    summary_title:"Scan Complete",review_title:"Review AI Suggestions",
+    summary_subtitle:"Classification complete — review before organizing",
+    stat_total_files:"Total Files",stat_duplicates:"Duplicates",stat_for_review:"For Review",
+    category_breakdown_title:"Category Breakdown",no_files_found:"No files found.",
+    review_results_btn:"Review Results",continue_to_preview:"Continue to Preview",
+    review_subtitle:"{n} file(s) flagged for review — change the category if needed",
+    filter_all:"All",filter_needs_review:"Needs Review",filter_duplicates:"Duplicates",
+    filter_success:"Success",filter_failed:"Failed",
+    col_file_name:"File Name",col_category:"Category",col_subcategory:"Subcategory",
+    col_confidence:"Confidence",col_flags:"Flags",col_destination:"Destination",
+    col_original_path:"Original Path",col_destination_reason:"Destination / Reason",col_status:"Status",
+    flag_review:"Review",flag_duplicate:"Duplicate",no_files_in_view:"No files in this view.",
+    preview_title:"Preview Organization Plan",confirmation_title:"Confirm Organization",
+    preview_subtitle:"Review the destination for each file. Untick a file to leave it where it is.",
+    stat_files_to_move:"Files to Move",stat_excluded:"Excluded",no_files_match:"No files match.",
+    organize_files_btn:"Organize Files",
+    confirmation_desc:"AI-DeskClean will create folders and move the approved files. This can be undone afterward.",
+    folder_label:"Folder",files_to_move_label:"Files to Move",excluded_label:"Excluded",
+    undo_available_label:"Undo Available",back_to_preview:"Back to Preview",confirm_organize_btn:"Confirm & Organize",
+    organizing_title:"Organizing Your Files",results_title:"Organization Complete",
+    organizing_desc:"Moving files into place…",
+    results_sub:"Your files have been organized according to the approved AI classification plan.",
+    open_folder:"Open Organized Folder",view_report:"View Full Report",undo:"Undo Last Operation",finish:"Finish",
+    result_organized_label:"Organized",result_errors_label:"Errors",result_time_label:"Time",dashboard_btn:"Dashboard",
+    report_title:"Organization Report",
+    report_folder_label:"Folder",report_files_moved_label:"Files Moved",report_errors_label:"Errors",
+    status_success:"Success",status_failed:"Failed",no_records:"No records.",
+    history_title:"Organization History",restore_title:"Restore Files",
+    history_organized_suffix:"organized",history_errors_suffix:"errors",
+    view_report_btn:"View Report",restore_btn:"Restore",
+    nav_reports_title:"Reports",
+    reports_title:"Organization Reports",reports_sub:"A cumulative summary of every run, by category and by classification method.",
+    reports_by_category:"By category folder",reports_by_method:"By classification method",
+    reports_empty:"Not enough data yet to show a report. Start a new scan first.",
+    reports_total_files:"Total Files Organized",reports_total_operations:"Total Operations",
+    notifications_title:"Notifications",help_title:"Help & About",
+    no_notifications:"No notifications yet.",
+    save_changes:"Save Changes",search:"Search…",scan_again:"Scan Again",
+    back_to_results:"Back to Results",
+    settings_subtitle:"Customize how AI-DeskClean works",
+    language_label:"Language",language_desc:"Select application display language",
+    ai_classification_label:"AI Classification",
+    ai_classification_desc:"Shown for reference — pick the classification method (including AI) per scan on the \"Organize Files\" screen.",
+    system_hidden_files_label:"System & Hidden Files",system_hidden_files_desc:"Always skipped automatically — never moved",
+    undo_label:"Undo",undo_desc:"The most recent organize operation can always be undone from the Results screen or History",
+    general:"General",ai_settings:"AI Settings",file_safety:"File Safety",
+    files:"files",classify_method_title:"Classification Method",
+    method_extension:"By File Type",method_extension_d:"Fast, offline sorting by extension.",
+    method_ai:"By AI Content",method_ai_d:"Reads each file with a local AI model.",
+    method_keywords:"By Keywords",method_keywords_d:"You define folder ↔ keyword rules.",
+    method_age:"By File Age",method_age_d:"Today / This Week / This Month / Older.",method_manual:"Manual",
+    ai_model_label:"AI Model",keyword_rules_label:"Keyword Rules",
+    keyword_rules_hint:"One rule per line: FolderName = keyword1, keyword2",
+    keyword_rules_placeholder:"Lectures = lecture, محاضرة, chapter\nProjects = project, مشروع, prototype",
+    stat_files_organized:"Files Organized",stat_operations:"Operations",stat_categories:"Categories",stat_last_run:"Last Run",
+    recent_activities:"Recent Activities",view_all:"View All",no_activity:"No activity yet",
+    no_activity_desc:"No organize operations yet. Once you organize a folder, it will show up here.",
+    undone_badge:"Undone",
+    about_title:"About AI-DeskClean",
+    about_system_name:"System Name",about_version:"Version",about_processing:"Processing",
+    about_ai_engine:"AI Engine",about_database:"Database",about_language:"Language",
+    about_university:"University",about_faculty:"Faculty",
+    about_processing_v:"100% Local",about_ai_engine_v:"Local Classification Model",
+    about_database_v:"SQLite (Local)",about_language_v:"Python + React",
+    about_university_v:"King Abdulaziz University",about_faculty_v:"Computing & IT",
+    help_how_title:"How AI-DeskClean Works",
+    help_how_body:"AI-DeskClean scans your selected folder, analyzes file names, metadata, and content samples locally, then classifies each file using a local AI model (or file-type rules if the AI model is not installed). No data leaves your device.",
+    help_permission_title:"Folder Permission",
+    help_permission_body:"The system only accesses folders you explicitly select. Protected, hidden, and system files are automatically ignored and never moved.",
+    help_ai_title:"AI Classification",
+    help_ai_body:"Files are classified based on name patterns, extensions, and limited content analysis. All classification happens locally using an on-device AI model.",
+    help_preview_title:"Preview and Approval",
+    help_preview_body:"Before any files are moved, you can review the proposed organization plan. You can reassign categories or exclude files from being moved.",
+    help_undo_title:"Undo",
+    help_undo_body:"Files are moved, not copied or deleted, so every organize operation can be undone from the Results screen or from History — moving each file back to where it was.",
+    help_reports_title:"Reports",
+    help_reports_body:"After each operation, a report is generated showing every file that was moved (or that failed to move, with the reason).",
+    help_privacy_title:"Privacy and Security",
+    help_privacy_body:"All processing is local. No files, metadata, or personal information is sent to external servers. Data is stored only on your device.",
+    help_faq_title:"Frequently Asked Questions",
+    help_faq_body:"Q: Can AI-DeskClean access my entire hard drive? A: No — only the folder you select.\nQ: Does it require internet? A: No — all processing happens locally.\nQ: Can I undo an organization? A: Yes — use the Undo button on the Results screen, or Restore from History.",
+  },
+  ar:{
+    title:"AI-DeskClean",subtitle:"نظام إدارة الملفات المحلي بالذكاء الاصطناعي",
+    welcome_title:"مرحباً بك في AI-DeskClean",welcome_desc:"أداة محلية لإدارة الملفات تُنظّم ملفاتك على هذا الجهاز باستخدام الذكاء الاصطناعي وقواعد نوع الملف. لا يتم رفع أي شيء إلى الإنترنت.",
+    get_started:"ابدأ الآن",exit:"خروج",lang_title:"اختر لغتك",continue:"متابعة",back:"رجوع",cancel:"إلغاء",
+    privacy_title:"سياسة الخصوصية",privacy_accept:"لقد قرأت سياسة الخصوصية وأوافق عليها.",privacy_subtitle:"صُمم AI-DeskClean بحيث تكون خصوصيتك على رأس الأولويات.",
+    priv_local_title:"المعالجة المحلية",priv_local_desc:"يتم تحليل جميع الملفات محلياً على جهاز المستخدم.",
+    priv_nocloud_title:"لا رفع إلى السحابة",priv_nocloud_desc:"لا يتم رفع الملفات أبداً إلى خوادم خارجية.",
+    priv_folder_title:"وصول محدود للمجلدات",priv_folder_desc:"يصل النظام فقط إلى المجلدات التي تختارها صراحةً.",
+    priv_sysfile_title:"حماية ملفات النظام",priv_sysfile_desc:"يتم تجاهل الملفات المحمية والمخفية تلقائياً.",
+    priv_data_title:"بيانات محلية",priv_data_desc:"يتم تخزين الملفات الشخصية والإعدادات والتقارير محلياً.",
+    priv_ai_title:"خصوصية الذكاء الاصطناعي",priv_ai_desc:"يتم تحليل مقتطف محدود فقط من المحتوى محلياً.",
+    dashboard:"لوحة التحكم",organize_files:"تنظيم الملفات",history:"السجل",nav_reports:"التقارير",
+    settings:"الإعدادات",help:"المساعدة",
+    welcome_back:"مرحباً بعودتك",ready:"نظام إدارة ملفاتك المحلي جاهز.",
+    start_scan:"بدء فحص جديد",org_history:"السجل والتقارير",
+    action_scan_desc:"اختر مجلداً ونظّمه باستخدام الذكاء الاصطناعي",action_history_desc:"عرض العمليات السابقة والتقارير واستعادة الملفات",
+    local_mode:"وضع محلي",
+    ai_status_title:"حالة نظام الذكاء الاصطناعي",
+    ai_status_desc:"يقوم AI-DeskClean بفحص وتصنيف الملفات بالكامل على هذا الجهاز. عند عدم توفر نموذج الذكاء الاصطناعي المحلي، يتم تنظيم الملفات تلقائياً باستخدام قواعد نوع الملف.",
+    local_only_notice:"تتم جميع العمليات محلياً. لا يتم إرسال أي بيانات إلى خوادم خارجية.",
+    undo_confirm_text:"سيؤدي هذا إلى إرجاع ملفات آخر عملية تنظيم إلى مكانها الأصلي. لا يمكن التراجع عن هذا الإجراء.",
+    confirm_undo_btn:"تأكيد التراجع",
+    restored_files_msg:"تمت استعادة {n} ملف/ملفات.",
+    undo_failed_msg:"فشل التراجع.",
+    restore_failed_msg:"فشلت الاستعادة.",
+    bridge_not_ready:"الجسر مع النظام غير جاهز بعد. الرجاء المحاولة بعد لحظات.",
+    could_not_open_folder_picker:"تعذّر فتح نافذة اختيار المجلد.",
+    could_not_open_folder:"تعذّر فتح المجلد.",
+    folder_not_usable:"لا يمكن استخدام هذا المجلد. الرجاء اختيار مجلد محدد بدلاً من قرص كامل أو مجلد نظام.",
+    scan_failed:"فشل الفحص.",
+    classification_failed:"فشل التصنيف.",
+    organize_failed:"فشل التنظيم.",
+    loading_system:"جارٍ تحميل النظام…",
+    folder_title:"اختر مجلداً للتنظيم",folder_desc:"اختر المجلد الذي يُسمح لـ AI-DeskClean بفحصه وتنظيمه.",
+    start_scan_btn:"بدء الفحص",back_dashboard:"العودة للوحة التحكم",
+    click_choose_different:"اضغط لاختيار مجلد آخر",
+    opening_folder_picker:"جارٍ فتح نافذة اختيار المجلد…",
+    click_choose_folder:"اضغط لاختيار مجلد…",
+    scan_options_title:"خيارات الفحص",include_subfolders:"تضمين المجلدات الفرعية",
+    hidden_files_note:"يتم دائماً تجاوز الملفات المخفية والمحمية تلقائياً.",
+    permission_title:"تأكيد صلاحية الوصول",grant_access:"منح الوصول والبدء",
+    permission_desc:"سيصل AI-DeskClean فقط إلى المجلد المحدد والمجلدات الفرعية المسموح بها.",
+    selected_folder_label:"المجلد المحدد",include_subfolders_label:"تضمين المجلدات الفرعية",
+    yes_value:"نعم",no_value:"لا",hidden_files_label:"الملفات المخفية",always_ignored:"يتم تجاهلها دائماً",
+    system_files_label:"ملفات النظام",always_protected:"محمية دائماً",
+    scanning_title:"جارٍ فحص ملفاتك",ai_title:"جارٍ التصنيف بالذكاء الاصطناعي",
+    scanning_desc:"جارٍ قراءة الملفات والبيانات الوصفية للمجلد…",
+    ai_desc:"يحلّل النظام أسماء الملفات والبيانات الوصفية وعيّنات محدودة.",
+    summary_title:"اكتمل الفحص",review_title:"مراجعة اقتراحات الذكاء الاصطناعي",
+    summary_subtitle:"اكتمل التصنيف — راجع النتائج قبل التنظيم",
+    stat_total_files:"إجمالي الملفات",stat_duplicates:"الملفات المكررة",stat_for_review:"بحاجة لمراجعة",
+    category_breakdown_title:"توزيع الفئات",no_files_found:"لم يتم العثور على ملفات.",
+    review_results_btn:"مراجعة النتائج",continue_to_preview:"المتابعة إلى المعاينة",
+    review_subtitle:"تم وضع علامة على {n} ملف/ملفات للمراجعة — غيّر الفئة إذا لزم الأمر",
+    filter_all:"الكل",filter_needs_review:"بحاجة لمراجعة",filter_duplicates:"مكررة",
+    filter_success:"ناجحة",filter_failed:"فاشلة",
+    col_file_name:"اسم الملف",col_category:"الفئة",col_subcategory:"الفئة الفرعية",
+    col_confidence:"مستوى الثقة",col_flags:"الحالة",col_destination:"الوجهة",
+    col_original_path:"المسار الأصلي",col_destination_reason:"الوجهة / السبب",col_status:"الحالة",
+    flag_review:"مراجعة",flag_duplicate:"مكرر",no_files_in_view:"لا توجد ملفات في هذا العرض.",
+    preview_title:"معاينة خطة التنظيم",confirmation_title:"تأكيد التنظيم",
+    preview_subtitle:"راجع وجهة كل ملف. أزل التحديد عن أي ملف لإبقائه في مكانه.",
+    stat_files_to_move:"ملفات سيتم نقلها",stat_excluded:"مستبعدة",no_files_match:"لا توجد ملفات مطابقة.",
+    organize_files_btn:"تنظيم الملفات",
+    confirmation_desc:"سيقوم AI-DeskClean بإنشاء المجلدات ونقل الملفات المعتمدة. يمكن التراجع عن هذا لاحقاً.",
+    folder_label:"المجلد",files_to_move_label:"ملفات سيتم نقلها",excluded_label:"مستبعدة",
+    undo_available_label:"إمكانية التراجع",back_to_preview:"العودة إلى المعاينة",confirm_organize_btn:"تأكيد ونظّم",
+    organizing_title:"جارٍ تنظيم ملفاتك",results_title:"اكتمل التنظيم",
+    organizing_desc:"جارٍ نقل الملفات إلى أماكنها…",
+    results_sub:"تم تنظيم ملفاتك وفق خطة التصنيف المعتمدة.",
+    open_folder:"فتح المجلد المنظّم",view_report:"عرض التقرير الكامل",undo:"التراجع عن العملية",finish:"إنهاء",
+    result_organized_label:"تم تنظيمها",result_errors_label:"أخطاء",result_time_label:"الوقت",dashboard_btn:"لوحة التحكم",
+    report_title:"تقرير التنظيم",
+    report_folder_label:"المجلد",report_files_moved_label:"الملفات المنقولة",report_errors_label:"الأخطاء",
+    status_success:"ناجحة",status_failed:"فاشلة",no_records:"لا توجد سجلات.",
+    history_title:"سجل التنظيم",restore_title:"استعادة الملفات",
+    history_organized_suffix:"تم تنظيمها",history_errors_suffix:"أخطاء",
+    view_report_btn:"عرض التقرير",restore_btn:"استعادة",
+    nav_reports_title:"التقارير",
+    reports_title:"تقارير التنظيم",reports_sub:"ملخص تراكمي لكل عمليات التنظيم حسب الفئة وطريقة التصنيف.",
+    reports_by_category:"حسب مجلد الفئة",reports_by_method:"حسب طريقة التصنيف",
+    reports_empty:"لا توجد بيانات كافية بعد لعرض تقرير. ابدأ فحصاً جديداً أولاً.",
+    reports_total_files:"إجمالي الملفات المنظّمة",reports_total_operations:"إجمالي العمليات",
+    notifications_title:"الإشعارات",help_title:"المساعدة وحول التطبيق",
+    no_notifications:"لا توجد إشعارات بعد.",
+    save_changes:"حفظ التغييرات",search:"بحث…",scan_again:"فحص مجدد",
+    back_to_results:"العودة للنتائج",
+    settings_subtitle:"خصّص طريقة عمل AI-DeskClean",
+    language_label:"اللغة",language_desc:"اختر لغة عرض التطبيق",
+    ai_classification_label:"التصنيف بالذكاء الاصطناعي",
+    ai_classification_desc:"للاطلاع فقط — اختر طريقة التصنيف (بما فيها الذكاء الاصطناعي) لكل عملية فحص من شاشة \"تنظيم الملفات\".",
+    system_hidden_files_label:"ملفات النظام والملفات المخفية",system_hidden_files_desc:"يتم تجاوزها تلقائياً دائماً — لا يتم نقلها أبداً",
+    undo_label:"التراجع",undo_desc:"يمكن دائماً التراجع عن آخر عملية تنظيم من شاشة النتائج أو من السجل",
+    general:"عام",ai_settings:"إعدادات الذكاء الاصطناعي",file_safety:"أمان الملفات",
+    files:"ملف",classify_method_title:"طريقة التصنيف",
+    method_extension:"حسب نوع الملف",method_extension_d:"تصنيف سريع بدون إنترنت حسب الامتداد.",
+    method_ai:"حسب محتوى AI",method_ai_d:"يقرأ كل ملف بنموذج ذكاء اصطناعي محلي.",
+    method_keywords:"حسب كلمات مفتاحية",method_keywords_d:"أنت تحدد قواعد المجلد والكلمات.",
+    method_age:"حسب عمر الملف",method_age_d:"اليوم / هذا الأسبوع / هذا الشهر / أقدم.",method_manual:"يدوي",
+    ai_model_label:"نموذج الذكاء الاصطناعي",keyword_rules_label:"قواعد الكلمات المفتاحية",
+    keyword_rules_hint:"كل قاعدة بسطر: اسم_المجلد = كلمة1, كلمة2",
+    keyword_rules_placeholder:"محاضرات = lecture, محاضرة, chapter\nمشاريع = project, مشروع, prototype",
+    stat_files_organized:"الملفات المنظّمة",stat_operations:"العمليات",stat_categories:"الفئات",stat_last_run:"آخر عملية",
+    recent_activities:"الأنشطة الأخيرة",view_all:"عرض الكل",no_activity:"لا يوجد نشاط بعد",
+    no_activity_desc:"لا توجد عمليات تنظيم بعد. بمجرد تنظيم مجلد، سيظهر هنا.",
+    undone_badge:"تم التراجع",
+    about_title:"حول AI-DeskClean",
+    about_system_name:"اسم النظام",about_version:"الإصدار",about_processing:"المعالجة",
+    about_ai_engine:"محرك الذكاء الاصطناعي",about_database:"قاعدة البيانات",about_language:"لغة البرمجة",
+    about_university:"الجامعة",about_faculty:"الكلية",
+    about_processing_v:"محلي بالكامل",about_ai_engine_v:"نموذج تصنيف محلي",
+    about_database_v:"SQLite (محلية)",about_language_v:"Python + React",
+    about_university_v:"جامعة الملك عبدالعزيز",about_faculty_v:"الحوسبة وتقنية المعلومات",
+    help_how_title:"كيف يعمل AI-DeskClean",
+    help_how_body:"يقوم AI-DeskClean بفحص المجلد الذي تختاره، ويحلّل أسماء الملفات والبيانات الوصفية وعيّنات من المحتوى محلياً، ثم يصنّف كل ملف باستخدام نموذج ذكاء اصطناعي محلي (أو قواعد نوع الملف إذا لم يكن النموذج مثبتاً). لا تغادر أي بيانات جهازك.",
+    help_permission_title:"صلاحية الوصول للمجلد",
+    help_permission_body:"يصل النظام فقط إلى المجلدات التي تختارها صراحةً. يتم تجاهل الملفات المحمية والمخفية وملفات النظام تلقائياً ولا يتم نقلها أبداً.",
+    help_ai_title:"التصنيف بالذكاء الاصطناعي",
+    help_ai_body:"يتم تصنيف الملفات بناءً على أنماط الأسماء والامتدادات وتحليل محدود للمحتوى. يتم كل التصنيف محلياً باستخدام نموذج ذكاء اصطناعي على الجهاز.",
+    help_preview_title:"المعاينة والموافقة",
+    help_preview_body:"قبل نقل أي ملفات، يمكنك مراجعة خطة التنظيم المقترحة. يمكنك إعادة تعيين الفئات أو استبعاد ملفات من النقل.",
+    help_undo_title:"التراجع",
+    help_undo_body:"يتم نقل الملفات وليس نسخها أو حذفها، لذا يمكن التراجع عن أي عملية تنظيم من شاشة النتائج أو من السجل — بإرجاع كل ملف إلى مكانه الأصلي.",
+    help_reports_title:"التقارير",
+    help_reports_body:"بعد كل عملية، يتم إنشاء تقرير يوضح كل ملف تم نقله (أو الذي فشل نقله مع سبب الفشل).",
+    help_privacy_title:"الخصوصية والأمان",
+    help_privacy_body:"تتم جميع المعالجة محلياً. لا يتم إرسال أي ملفات أو بيانات وصفية أو معلومات شخصية إلى خوادم خارجية. يتم تخزين البيانات على جهازك فقط.",
+    help_faq_title:"الأسئلة الشائعة",
+    help_faq_body:"س: هل يمكن لـ AI-DeskClean الوصول إلى القرص الصلب بالكامل؟ ج: لا — فقط المجلد الذي تختاره.\nس: هل يتطلب اتصالاً بالإنترنت؟ ج: لا — تتم كل المعالجة محلياً.\nس: هل يمكنني التراجع عن عملية تنظيم؟ ج: نعم — استخدم زر التراجع في شاشة النتائج، أو الاستعادة من السجل.",
+  }
+};
+
+
+/* ─── Helpers ──────────────────────────────────────────────────── */
+function Toggle({checked, onChange}) {
+  return (
+    <label className="toggle" style={{flexShrink:0}}>
+      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} />
+      <span className="slider" />
+    </label>
+  );
+}
+function Cb({checked, onChange, id}) {
+  return (
+    <input type="checkbox" id={id} checked={checked} onChange={e=>onChange(e.target.checked)}
+      style={{width:17,height:17,accentColor:'#208D44',cursor:'pointer'}} />
+  );
+}
+function StatCard({icon, label, value, sub, color='#208D44'}) {
+  return (
+    <div className="stat-card">
+      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+        <div style={{width:30,height:30,borderRadius:10,background:color+'1a',display:'flex',alignItems:'center',justifyContent:'center',color}}>{icon}</div>
+        <span style={{fontSize:11,color:'#66756B',fontWeight:500,lineHeight:1.3}}>{label}</span>
+      </div>
+      <span style={{fontSize:22,fontWeight:800,color}}>{value}</span>
+      {sub && <span style={{fontSize:10,color:'#849087'}}>{sub}</span>}
+    </div>
+  );
+}
+function ActionCard({icon, label, desc, onClick, color='#208D44'}) {
+  return (
+    <div className="action-card" onClick={onClick} role="button" tabIndex={0}>
+      <div style={{width:40,height:40,borderRadius:12,background:color+'1a',display:'flex',alignItems:'center',justifyContent:'center',color,fontSize:20}}>{icon}</div>
+      <div>
+        <div style={{fontWeight:700,fontSize:13,color:'#183A2A'}}>{label}</div>
+        <div style={{fontSize:11,color:'#66756B',marginTop:2}}>{desc}</div>
+      </div>
+    </div>
+  );
+}
+function Progress({value}) {
+  return (
+    <div className="progress-bar">
+      <div className="progress-fill" style={{width:`${Math.min(value,100)}%`}} />
+    </div>
+  );
+}
+function Badge({children, color='#208D44', bg=''}) {
+  const bgc = bg || color+'1a';
+  return <span className="badge" style={{background:bgc,color}}>{children}</span>;
+}
+
+/* ─── Official KAU Logo ─────────────────────────────────────────── */
+const KAU_LOGO = "data:image/png;base64,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";
+function KauLogo({size=36, white=false}) {
+  const width = Math.round(size * 0.80); // official 16:20 minimum ratio
+  return (
+    <div style={{width,height:size,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+      <img
+        src={KAU_LOGO}
+        alt="King Abdulaziz University"
+        style={{
+          width:'100%',height:'100%',objectFit:'contain',
+          filter:white?'brightness(0) invert(1)':'none'
+        }}
+      />
+    </div>
+  );
+}
+function AppLogo({size=40}) {
+  return (
+    <div style={{width:size,height:size,borderRadius:size*0.28,background:'linear-gradient(135deg,#208D44,#86C242)',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 12px rgba(32,141,68,.4)'}}>
+      <span style={{color:'white',fontSize:size*0.4,fontWeight:800}}>✦</span>
+    </div>
+  );
+}
+
+/* ─── Screens that show the sidebar ────────────────────────────── */
+const POST = new Set(['dashboard','folder','permission','scanning','ai_classification','summary','review','preview','confirmation','organizing','results','report','history','reports','settings','notifications','help']);
+
+const NAV = [
+  {id:'dashboard',icon:I.dashboard,key:'dashboard'},
+  {id:'folder',icon:I.folder,key:'organize_files'},
+  {id:'history',icon:I.history,key:'history'},
+  {id:'reports',icon:I.report,key:'nav_reports'},
+  {id:'settings',icon:I.settings,key:'settings'},
+  {id:'help',icon:I.help,key:'help'},
+];
+
+const PIPELINE = new Set(['folder','permission','scanning','ai_classification','summary','review','preview','confirmation','organizing','results','report']);
+
+/* ═══════════════════════════════════════════════════════════════ */
+/*  MAIN APP                                                       */
+/* ═══════════════════════════════════════════════════════════════ */
+function App() {
+  const [screen, setScreen] = useState('splash');
+  const [prev, setPrev] = useState('welcome');
+  const [lang, setLang] = useState('en');
+  const [privOk, setPrivOk] = useState(false);
+  const [folder, setFolder] = useState('');
+  const [includeSubfolders, setIncludeSubfolders] = useState(true);
+  const [classifyMethod, setClassifyMethod] = useState('extension');
+  const [aiModel, setAiModel] = useState('gemma3');
+  const [keywordRulesText, setKeywordRulesText] = useState('');
+  const [maximized, setMaximized] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [toast, setToast] = useState(null);
+  const [settings, setSettings] = useState({ai:true});
+  const [undoOpen, setUndoOpen] = useState(false);
+
+  const [scanResult, setScanResult] = useState(null);
+  const [classifyResult, setClassifyResult] = useState(null);
+  const [excluded, setExcluded] = useState(() => new Set());
+  const [orgResult, setOrgResult] = useState(null);
+  const [history, setHistory] = useState([]);
+
+  const t = k => (dict[lang] && dict[lang][k]) || k;
+  /* Same as t(), but substitutes {n} (or any {placeholder}) in the
+     translated string with values from the given object, e.g.
+     tf('restored_files_msg', {n: 4}) -> "Restored 4 file(s)." */
+  const tf = (k, vals) => t(k).replace(/\{(\w+)\}/g, (_, key) => (vals && vals[key] !== undefined) ? vals[key] : `{${key}}`);
+  t.f = tf; // lets any screen that only received `t` still do t.f('key', {n:5})
+  const isRTL = lang === 'ar';
+
+  /* Turns the "FolderName = kw1, kw2" textarea into the rule list the
+     backend expects for the keyword classification method. */
+  const parseKeywordRules = (text) => {
+    return (text || '')
+      .split('\n')
+      .map(line => line.trim())
+      .filter(Boolean)
+      .map(line => {
+        const [folderPart, keywordsPart] = line.split('=');
+        const folder = (folderPart || '').trim();
+        const keywords = (keywordsPart || '')
+          .split(',')
+          .map(k => k.trim())
+          .filter(Boolean);
+        return { folder, keywords };
+      })
+      .filter(rule => rule.folder && rule.keywords.length > 0);
+  };
+
+  React.useEffect(() => {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+    document.body.dir = isRTL ? 'rtl' : 'ltr';
+    document.body.style.fontFamily = isRTL
+      ? "'The Year of the Camel','Alexandria',sans-serif"
+      : "'Poppins','Alexandria',sans-serif";
+  }, [lang, isRTL]);
+
+  const isPost = POST.has(screen);
+
+  const notify = msg => { setToast(msg); setTimeout(()=>setToast(null),2800); };
+  const go = s => { setPrev(screen); setScreen(s); };
+
+  /* Bridge to the Python backend, exposed by pywebview as window.pywebview.api */
+  const api = (method, ...args) => {
+    if (!window.pywebview || !window.pywebview.api || !window.pywebview.api[method]) {
+      return Promise.reject(new Error(t('bridge_not_ready')));
+    }
+    return window.pywebview.api[method](...args);
+  };
+
+  const refreshHistory = () => {
+    api('get_history').then(r => { if (r && r.success) setHistory(r.history || []); }).catch(()=>{});
+  };
+
+  const [dashStats, setDashStats] = useState(null);
+  const [dashRecent, setDashRecent] = useState([]);
+  const [canUndo, setCanUndo] = useState(false);
+  const refreshDashboard = () => {
+    api('get_dashboard_stats').then(r => {
+      if (r && r.success) { setDashStats(r.stats || null); setDashRecent(r.recent || []); setCanUndo(!!r.can_undo); }
+    }).catch(()=>{});
+  };
+
+  /* Persist the chosen language so it survives an app restart. */
+  const changeLang = (l) => {
+    setLang(l);
+    api('save_settings', {language: l}).catch(()=>{});
+  };
+  React.useEffect(() => {
+    api('get_settings').then(r => {
+      if (r && r.success && r.settings && r.settings.language) setLang(r.settings.language);
+    }).catch(()=>{});
+  }, []);
+
+  /* TopBar — this is the app's ONLY title bar. The desktop window is
+     created frameless (see app.py) so there is no separate native OS
+     title bar underneath it; only this element's ".pywebview-drag-region"
+     class lets the user drag the window. */
+  const TopBar = () => (
+    <div className="pywebview-drag-region" style={{height:48,background:'#055934',display:'flex',alignItems:'center',justifyContent:'space-between',flexDirection:isRTL?'row-reverse':'row',padding:'0 12px',flexShrink:0,zIndex:50}}>
+      <div style={{display:'flex',alignItems:'center',gap:10}}>
+        {isPost && (
+          <button onClick={()=>setSidebarOpen(o=>!o)} style={{width:28,height:28,borderRadius:8,background:'rgba(255,255,255,.1)',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'rgba(255,255,255,.8)'}}>
+            {I.menu}
+          </button>
+        )}
+        <KauLogo size={38} white={true} />
+        <span style={{color:'rgba(255,255,255,.5)',fontSize:12}}>|</span>
+        <span style={{color:'white',fontSize:12,fontWeight:700,letterSpacing:.5}}>{t('title')}</span>
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:8}}>
+        {isPost && <>
+          <button onClick={()=>go('settings')} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,.8)',padding:6}}>{I.settings}</button>
+          <div style={{display:'flex',alignItems:'center',gap:7,background:'rgba(255,255,255,.1)',borderRadius:8,padding:'4px 10px'}}>
+            <div style={{width:22,height:22,borderRadius:'50%',background:'#86C242',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:'#055934'}}>L</div>
+            <span style={{fontSize:11,fontWeight:600,color:'white'}}>{t('local_mode')}</span>
+          </div>
+        </>}
+        <div style={{display:'flex',gap:2,marginLeft:4}}>
+          {[
+            {ico:I.minus, cb:()=>{ api('minimize_window').catch(()=>{}); }},
+            {ico:maximized?I.minimize:I.maximize, cb:()=>{
+              const next = !maximized;
+              setMaximized(next);
+              api(next ? 'maximize_window' : 'restore_window').catch(()=>{});
+            }},
+            {ico:I.x, cb:()=>{ api('close_application').catch(()=>{}); }},
+          ].map((b,i)=>(
+            <button key={i} onClick={b.cb} style={{width:24,height:24,background:'rgba(255,255,255,.08)',border:'none',borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'rgba(255,255,255,.75)'}}>{b.ico}</button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  /* Sidebar */
+  const Sidebar = () => (
+    <div style={{width:sidebarOpen?208:52,background:'#055934',display:'flex',flexDirection:'column',flexShrink:0,transition:'width .25s',overflow:'hidden'}}>
+      <div style={{flex:1,padding:'10px 8px',display:'flex',flexDirection:'column',gap:2}}>
+        {NAV.map(({id,icon,key})=>{
+          const active = screen===id || (id==='folder' && PIPELINE.has(screen));
+          return (
+            <button key={id} onClick={()=>go(id==='history' ? (refreshHistory(),'history') : id)} className={`nav-item ${active?'active':''}`}>
+              <span style={{flexShrink:0,display:'flex'}}>{icon}</span>
+              {sidebarOpen && <span style={{whiteSpace:'nowrap'}}>{t(key)}</span>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const wrapStyle = {
+    height: '100vh',
+    display:'flex',flexDirection:'column',
+    fontFamily:"'The Year of the Camel','Alexandria',sans-serif",
+    background:'#F0EEE9',color:'#183A2A',
+    overflow:'hidden',
+  };
+
+  return (
+    <div style={wrapStyle} dir={isRTL?'rtl':'ltr'}>
+      <TopBar />
+      {toast && <div className="toast">{toast}</div>}
+      {/* flexDirection is intentionally always 'row': the dir attribute
+          above already mirrors flex layout automatically in RTL, so the
+          sidebar lands on the right in Arabic without any extra flip
+          here. Adding 'row-reverse' on top of dir="rtl" would cancel the
+          mirroring back out, which was the bug. */}
+      <div style={{flex:1,display:'flex',overflow:'hidden',flexDirection:'row'}}>
+        {isPost && <Sidebar />}
+        <div style={{flex:1,overflowY:'auto',overflowX:'hidden',display:'flex',flexDirection:'column',textAlign:isRTL?'right':'left'}}>
+          {/* Local-only flow — no accounts, no sign-in */}
+          {/* Onboarding order: language selection first, then the
+              "Get Started" welcome screen, then the privacy policy
+              agreement, and only then the main application. */}
+          {screen==='splash'        && <SplashScreen onDone={()=>go('language')} t={t}/>}
+          {screen==='language'      && <LangScreen lang={lang} setLang={changeLang} onNext={()=>go('welcome')} showBack={false} t={t}/>}
+          {screen==='welcome'       && <WelcomeScreen onStart={()=>go('privacy')} onExit={()=>notify(t('exit'))} t={t}/>}
+          {screen==='privacy'       && <PrivacyScreen ok={privOk} setOk={setPrivOk} onNext={()=>{refreshHistory();refreshDashboard();go('dashboard');}} onBack={()=>go('welcome')} t={t}/>}
+          {/* Main application */}
+          {screen==='dashboard'     && <DashboardScreen stats={dashStats} recent={dashRecent} canUndo={canUndo} refresh={refreshDashboard} onScan={()=>go('folder')} onHistory={()=>{refreshHistory();go('history');}} onReports={()=>go('reports')} onView={entry=>{setOrgResult(entry);go('report');}} onUndo={()=>setUndoOpen(true)} t={t}/>}
+          {screen==='folder'        && <FolderScreen api={api} folder={folder} setFolder={setFolder} includeSubfolders={includeSubfolders} setIncludeSubfolders={setIncludeSubfolders} classifyMethod={classifyMethod} setClassifyMethod={setClassifyMethod} aiModel={aiModel} setAiModel={setAiModel} keywordRulesText={keywordRulesText} setKeywordRulesText={setKeywordRulesText} onNext={()=>go('permission')} onBack={()=>go('dashboard')} notify={notify} t={t}/>}
+          {screen==='permission'    && <PermissionScreen folder={folder} includeSubfolders={includeSubfolders} onConfirm={()=>go('scanning')} onCancel={()=>go('folder')} t={t}/>}
+          {screen==='scanning'      && <ScanningScreen api={api} includeSubfolders={includeSubfolders} onDone={r=>{setScanResult(r);go('ai_classification');}} onError={msg=>{notify(msg);go('folder');}} onCancel={()=>go('folder')} t={t}/>}
+          {screen==='ai_classification' && <AIClassScreen api={api} useAi={false} method={classifyMethod} aiModel={aiModel} keywordRules={parseKeywordRules(keywordRulesText)} onDone={r=>{setClassifyResult(r);setExcluded(new Set());go('summary');}} onError={msg=>{notify(msg);go('dashboard');}} t={t}/>}
+          {screen==='summary'       && <SummaryScreen classifyResult={classifyResult} onReview={()=>go('review')} onContinue={()=>go('preview')} onScanAgain={()=>go('scanning')} onCancel={()=>go('dashboard')} t={t}/>}
+          {screen==='review'        && <ReviewScreen api={api} classifyResult={classifyResult} setClassifyResult={setClassifyResult} onContinue={()=>go('preview')} onBack={()=>go('summary')} t={t}/>}
+          {screen==='preview'       && <PreviewScreen folder={folder} classifyResult={classifyResult} excluded={excluded} setExcluded={setExcluded} onOrganize={()=>go('confirmation')} onBack={()=>go('summary')} t={t}/>}
+          {screen==='confirmation'  && <ConfirmScreen folder={folder} classifyResult={classifyResult} excluded={excluded} onConfirm={()=>go('organizing')} onBack={()=>go('preview')} onCancel={()=>go('dashboard')} t={t}/>}
+          {screen==='organizing'    && <OrganisingScreen api={api} excluded={excluded} onDone={r=>{setOrgResult(r);refreshHistory();refreshDashboard();go('results');}} onError={msg=>{notify(msg);go('confirmation');}} t={t}/>}
+          {screen==='results'       && <ResultsScreen orgResult={orgResult} onOpenFolder={()=>{api('open_folder',folder).catch(()=>notify(t('could_not_open_folder')));}} onReport={()=>go('report')} onUndo={()=>setUndoOpen(true)} onDashboard={()=>go('dashboard')} onFinish={()=>go('dashboard')} t={t}/>}
+          {screen==='report'        && <ReportScreen report={orgResult} folder={folder} onBack={()=>go('results')} onDashboard={()=>go('dashboard')} t={t}/>}
+          {screen==='history'       && <HistoryScreen api={api} history={history} refresh={refreshHistory} onView={entry=>{setOrgResult(entry);go('report');}} notify={notify} t={t}/>}
+          {screen==='reports'       && <ReportsScreen api={api} t={t}/>}
+          {screen==='settings'      && <SettingsScreen settings={settings} setSettings={setSettings} lang={lang} setLang={changeLang} onBack={()=>go(prev)} t={t}/>}
+          {screen==='notifications' && <NotificationsScreen t={t}/>}
+          {screen==='help'          && <HelpScreen t={t}/>}
+        </div>
+      </div>
+
+      {/* Undo dialog */}
+      {undoOpen && (
+        <div className="dialog-overlay" onClick={()=>setUndoOpen(false)}>
+          <div className="dialog-box" onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
+              <span style={{color:'#d97706',display:'flex'}}>{I.warn}</span>
+              <strong style={{color:'#055934',fontSize:16}}>{t('undo')}</strong>
+            </div>
+            <p style={{color:'#5F6D63',fontSize:13,marginBottom:20,lineHeight:1.6}}>{t('undo_confirm_text')}</p>
+            <div style={{display:'flex',gap:10,justifyContent:'flex-end'}}>
+              <button className="btn-outline" onClick={()=>setUndoOpen(false)}>{t('cancel')}</button>
+              <button className="btn-primary" style={{background:'#dc2626'}} onClick={()=>{
+                setUndoOpen(false);
+                api('undo_last_operation').then(r=>{
+                  notify(r && r.success ? tf('restored_files_msg', {n: r.restored_count}) : t('undo_failed_msg'));
+                  refreshHistory();
+                  refreshDashboard();
+                  go('dashboard');
+                }).catch(()=>{notify(t('undo_failed_msg'));go('dashboard');});
+              }}>{t('confirm_undo_btn')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+/* ═══════════════════ SCREENS ═══════════════════════════════════ */
+
+/* 1 — SPLASH */
+function SplashScreen({onDone,t}) {
+  const [p,setP]=useState(0);
+  useEffect(()=>{
+    const iv=setInterval(()=>setP(x=>{if(x>=100){clearInterval(iv);return 100;}return x+2;}),40);
+    const tm=setTimeout(onDone,2500);
+    return()=>{clearInterval(iv);clearTimeout(tm);};
+  },[]);
+  return (
+    <div className="fade-in" style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'#055934'}}>
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:24}}>
+        <div className="pulse-glow" style={{borderRadius:24,padding:4}}><AppLogo size={88}/></div>
+        <div style={{textAlign:'center'}}>
+          <div style={{fontSize:28,fontWeight:800,color:'white',marginBottom:4}}>{t('title')}</div>
+          <div style={{fontSize:13,color:'#D3E6BE'}}>{t('subtitle')}</div>
+        </div>
+        <div style={{width:240}}>
+          <Progress value={p}/>
+          <div style={{display:'flex',justifyContent:'space-between',marginTop:6,fontSize:10,color:'#86C242'}}>
+            <span>{t('loading_system')}</span><span>{p}%</span>
+          </div>
+        </div>
+        <div style={{marginTop:16,opacity:.55}}><KauLogo size={54} white={true}/></div>
+      </div>
+    </div>
+  );
+}
+
+/* 2 — WELCOME */
+function WelcomeScreen({onStart,onExit,t}) {
+  return (
+    <div className="fade-in" style={{flex:1,display:'flex',flexDirection:'column',background:'#F0EEE9',position:'relative'}}>
+      <div style={{position:'absolute',top:20,left:24}}><KauLogo size={60}/></div>
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:32,textAlign:'center'}}>
+        <AppLogo size={72}/>
+        <h2 style={{fontSize:28,fontWeight:800,color:'#055934',margin:'20px 0 12px'}}>{t('welcome_title')}</h2>
+        <p style={{color:'#5F6D63',maxWidth:480,lineHeight:1.7,marginBottom:36,fontSize:14}}>{t('welcome_desc')}</p>
+        <div style={{display:'flex',gap:14}}>
+          <button className="btn-ghost" onClick={onExit} style={{width:120}}>{t('exit')}</button>
+          <button className="btn-primary" onClick={onStart} style={{width:160,fontSize:14}}>{t('get_started')} →</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* 3 — LANGUAGE */
+function LangScreen({lang,setLang,onNext,onBack,showBack=true,t}) {
+  return (
+    <div className="fade-in" style={{flex:1,display:'flex',flexDirection:'column',background:'#F0EEE9'}}>
+      <div style={{padding:'20px 24px 8px',minHeight:38}}>
+        {showBack && <button className="btn-ghost" onClick={onBack} style={{display:'flex',alignItems:'center',gap:6,fontSize:12,padding:'6px 12px'}}>{I.back}{t('back')}</button>}
+      </div>
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:32}}>
+        <h2 style={{fontSize:22,fontWeight:800,color:'#055934',marginBottom:28}}>{t('lang_title')}</h2>
+        <div style={{display:'flex',gap:20,marginBottom:36,width:'100%',maxWidth:400}}>
+          {[['en','🇺🇸','English'],['ar','🇸🇦','العربية']].map(([l,flag,label])=>(
+            <div key={l} onClick={()=>setLang(l)}
+              style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',padding:24,background:'white',borderRadius:16,border:`2px solid ${lang===l?'#208D44':'#C7D9BE'}`,cursor:'pointer',boxShadow:lang===l?'0 4px 20px rgba(32,141,68,.15)':''}}
+            >
+              <div style={{fontSize:36,marginBottom:10}}>{flag}</div>
+              <span style={{fontWeight:700,color:'#183A2A'}}>{label}</span>
+              {lang===l && <span style={{marginTop:8,color:'#208D44',display:'flex'}}>{I.ok}</span>}
+            </div>
+          ))}
+        </div>
+        <button className="btn-primary" style={{width:'100%',maxWidth:400,height:44}} onClick={onNext}>{t('continue')}</button>
+      </div>
+    </div>
+  );
+}
+
+/* 4 — PRIVACY */
+function PrivacyScreen({ok,setOk,onNext,onBack,t}) {
+  const pts=[
+    [I.cpu,t('priv_local_title'),t('priv_local_desc')],
+    [I.wifi0,t('priv_nocloud_title'),t('priv_nocloud_desc')],
+    [I.folder,t('priv_folder_title'),t('priv_folder_desc')],
+    [I.shield,t('priv_sysfile_title'),t('priv_sysfile_desc')],
+    [I.db,t('priv_data_title'),t('priv_data_desc')],
+    [I.brain,t('priv_ai_title'),t('priv_ai_desc')],
+  ];
+  return (
+    <div className="fade-in" style={{flex:1,display:'flex',flexDirection:'column',padding:'24px 32px',maxWidth:640,margin:'0 auto',width:'100%'}}>
+      <button className="btn-ghost" onClick={onBack} style={{display:'flex',alignItems:'center',gap:6,fontSize:12,padding:'6px 12px',marginBottom:20,alignSelf:'flex-start'}}>{I.back}{t('back')}</button>
+      <h2 style={{fontSize:22,fontWeight:800,color:'#055934',marginBottom:4}}>{t('privacy_title')}</h2>
+      <p style={{color:'#5F6D63',fontSize:13,marginBottom:20}}>{t('privacy_subtitle')}</p>
+      <div style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:10,marginBottom:20}}>
+        {pts.map(([icon,title,desc],i)=>(
+          <div key={i} style={{background:'white',borderRadius:14,border:'1px solid #D3E6BE',padding:'14px 16px',display:'flex',gap:14,alignItems:'flex-start'}}>
+            <div style={{width:32,height:32,borderRadius:10,background:'#F0EEE9',display:'flex',alignItems:'center',justifyContent:'center',color:'#208D44',flexShrink:0}}>{icon}</div>
+            <div><div style={{fontWeight:700,fontSize:13,color:'#183A2A',marginBottom:4}}>{title}</div><div style={{fontSize:12,color:'#66756B',lineHeight:1.5}}>{desc}</div></div>
+          </div>
+        ))}
+      </div>
+      <div style={{background:'white',border:'1.5px solid #D3E6BE',borderRadius:12,padding:'12px 16px',display:'flex',alignItems:'center',gap:12,marginBottom:14}}>
+        <Cb id="priv" checked={ok} onChange={setOk}/>
+        <label htmlFor="priv" style={{fontSize:13,color:'#183A2A',cursor:'pointer'}}>{t('privacy_accept')}</label>
+      </div>
+      <div style={{display:'flex',gap:10}}>
+        <button className="btn-ghost" onClick={onBack}>{t('cancel')}</button>
+        <button className="btn-primary" style={{flex:1,height:44}} disabled={!ok} onClick={onNext}>{t('continue')}</button>
+      </div>
+    </div>
+  );
+}
+
+/* 10 — DASHBOARD */
+function DashboardScreen({stats,recent,canUndo,refresh,onScan,onHistory,onReports,onView,onUndo,t}) {
+  useEffect(()=>{ refresh && refresh(); }, []);
+  const s = stats || {files_organized:0,operations:0,categories:0,undone:0,last_run:null};
+  const lastRun = s.last_run ? new Date(s.last_run).toLocaleString() : t('no_activity');
+  return (
+    <div className="fade-in" style={{flex:1,padding:24,display:'flex',flexDirection:'column',gap:20,background:'#F0EEE9'}}>
+      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
+        <div>
+          <h1 style={{fontSize:22,fontWeight:800,color:'#055934'}}>{t('welcome_back')} 👋</h1>
+          <p style={{fontSize:13,color:'#5F6D63',marginTop:4}}>{t('ready')}</p>
+        </div>
+        {/* "Undo Last Operation" is intentionally always visible here on
+            the dashboard itself, not tucked away inside History. */}
+        <button
+          className="btn-outline"
+          disabled={!canUndo}
+          onClick={onUndo}
+          style={{display:'flex',alignItems:'center',gap:8,opacity:canUndo?1:.45,cursor:canUndo?'pointer':'not-allowed',borderColor:'#dc2626',color:'#dc2626'}}
+        >
+          {I.undo}{t('undo')}
+        </button>
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:14}}>
+        <StatCard icon={I.check} label={t('stat_files_organized')} value={s.files_organized} color="#208D44"/>
+        <StatCard icon={I.layers} label={t('stat_operations')} value={s.operations} color="#d97706"/>
+        <StatCard icon={I.folder} label={t('stat_categories')} value={s.categories} color="#2563eb"/>
+        <StatCard icon={I.history} label={t('stat_last_run')} value={s.last_run ? lastRun : '—'} sub={s.last_run ? '' : t('no_activity')} color="#6d28d9"/>
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:14}}>
+        <ActionCard icon={I.zap} label={t('start_scan')} desc={t('action_scan_desc')} onClick={onScan} color="#208D44"/>
+        <ActionCard icon={I.history} label={t('org_history')} desc={t('action_history_desc')} onClick={onHistory} color="#d97706"/>
+      </div>
+
+      {/* "Recent Activities" is also always visible here, right on the
+          dashboard, showing the last 5 organize operations. */}
+      <div style={{background:'white',borderRadius:16,border:'1px solid #D3E6BE',overflow:'hidden'}}>
+        <div className="section-title" style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span>{t('recent_activities')}</span>
+          {recent && recent.length>0 && <button onClick={onHistory} style={{background:'none',border:'none',color:'#208D44',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{t('view_all')}</button>}
+        </div>
+        <div style={{padding: (recent&&recent.length) ? '8px 20px' : '24px 20px'}}>
+          {(!recent || recent.length===0) && (
+            <p style={{fontSize:12,color:'#849087',textAlign:'center',padding:'12px 0'}}>{t('no_activity_desc')}</p>
+          )}
+          {recent && recent.map((h,i)=>(
+            <div key={h.id||i} onClick={()=>onView(h)} className="card-hover" style={{display:'flex',alignItems:'center',gap:12,padding:'10px 0',borderBottom:i<recent.length-1?'1px solid #ECEFE8':'none',cursor:'pointer'}}>
+              <div style={{width:32,height:32,background:'rgba(32,141,68,.1)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',color:'#208D44',flexShrink:0}}>{I.history}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:700,fontSize:12,color:'#183A2A',wordBreak:'break-all'}}>{h.folder}</div>
+                <div style={{fontSize:10.5,color:'#849087'}}>{h.timestamp ? new Date(h.timestamp*1000).toLocaleString() : ''}</div>
+              </div>
+              <span style={{fontSize:11,color:'#5F6D63',flexShrink:0}}>✓ {h.moved_count||0}</span>
+              {h.undone && <Badge color="#849087">{t('undone_badge')}</Badge>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{background:'white',borderRadius:16,border:'1px solid #D3E6BE',padding:20}}>
+        <div style={{fontWeight:700,color:'#055934',fontSize:14,marginBottom:16,display:'flex',alignItems:'center',gap:8}}>{I.brain} {t('ai_status_title')}</div>
+        <p style={{fontSize:12,color:'#5F6D63',lineHeight:1.7}}>{t('ai_status_desc')}</p>
+        <div style={{marginTop:14,padding:12,background:'#F0EEE9',borderRadius:12,fontSize:11,color:'#66756B'}}>{t('local_only_notice')}</div>
+      </div>
+    </div>
+  );
+}
+/* 11 — FOLDER */
+function FolderScreen({api,folder,setFolder,includeSubfolders,setIncludeSubfolders,classifyMethod,setClassifyMethod,aiModel,setAiModel,keywordRulesText,setKeywordRulesText,onNext,onBack,notify,t}) {
+  const [busy,setBusy] = useState(false);
+  const [aiModels,setAiModels] = useState({});
+  useEffect(()=>{
+    api('get_ai_models').then(r=>{ if (r && r.success) setAiModels(r.models || {}); }).catch(()=>{});
+  }, []);
+  const choose = () => {
+    setBusy(true);
+    api('choose_folder').then(r=>{
+      setBusy(false);
+      if (r && r.success) setFolder(r.path);
+      else notify(t('folder_not_usable'));
+    }).catch(()=>{setBusy(false);notify(t('could_not_open_folder_picker'));});
+  };
+  const methods = [
+    {id:'extension', icon:I.layers, label:t('method_extension'), desc:t('method_extension_d')},
+    {id:'ai',        icon:I.brain,  label:t('method_ai'),        desc:t('method_ai_d')},
+    {id:'keywords',  icon:I.search, label:t('method_keywords'),  desc:t('method_keywords_d')},
+    {id:'age',       icon:I.history,label:t('method_age'),       desc:t('method_age_d')},
+  ];
+  return (
+    <div className="fade-in" style={{flex:1,padding:24,maxWidth:680,margin:'0 auto',width:'100%',background:'#F0EEE9'}}>
+      <button className="btn-ghost" onClick={onBack} style={{display:'flex',alignItems:'center',gap:6,fontSize:12,padding:'6px 12px',marginBottom:20}}>{I.back}{t('back_dashboard')}</button>
+      <h2 style={{fontSize:22,fontWeight:800,color:'#055934',marginBottom:6}}>{t('folder_title')}</h2>
+      <p style={{fontSize:13,color:'#5F6D63',marginBottom:20}}>{t('folder_desc')}</p>
+
+      <div onClick={choose} className="card-hover" style={{background:'white',borderRadius:14,border:`2px dashed ${folder?'#208D44':'#D3E6BE'}`,padding:'22px 18px',display:'flex',alignItems:'center',gap:14,cursor:'pointer',marginBottom:20}}>
+        <div style={{width:42,height:42,borderRadius:12,background:'#F0EEE9',display:'flex',alignItems:'center',justifyContent:'center',color:'#208D44'}}>{I.plus}</div>
+        <div style={{flex:1,minWidth:0}}>
+          {folder ? (
+            <>
+              <div style={{fontWeight:700,fontSize:13,color:'#183A2A',wordBreak:'break-all'}}>{folder}</div>
+              <div style={{fontSize:11,color:'#849087',marginTop:3}}>{t('click_choose_different')}</div>
+            </>
+          ) : (
+            <div style={{fontSize:13,color:'#208D44',fontWeight:600}}>{busy ? t('opening_folder_picker') : t('click_choose_folder')}</div>
+          )}
+        </div>
+        {folder && <span style={{color:'#208D44',fontSize:18}}>✓</span>}
+      </div>
+
+      <div style={{background:'white',borderRadius:14,border:'1px solid #D3E6BE',padding:18,marginBottom:20}}>
+        <div style={{fontSize:11,fontWeight:700,color:'#208D44',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:14}}>{t('scan_options_title')}</div>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <Toggle checked={includeSubfolders} onChange={setIncludeSubfolders}/>
+          <span style={{fontSize:13,color:'#183A2A'}}>{t('include_subfolders')}</span>
+        </div>
+        <p style={{fontSize:11,color:'#849087',marginTop:10}}>{t('hidden_files_note')}</p>
+      </div>
+
+      <div style={{background:'white',borderRadius:14,border:'1px solid #D3E6BE',padding:18,marginBottom:20}}>
+        <div style={{fontSize:11,fontWeight:700,color:'#208D44',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:14}}>{t('classify_method_title')}</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:10}}>
+          {methods.map(m=>(
+            <button key={m.id} onClick={()=>setClassifyMethod(m.id)}
+              style={{display:'flex',flexDirection:'column',gap:6,padding:'12px 14px',borderRadius:12,cursor:'pointer',
+                border:`1.5px solid ${classifyMethod===m.id?'#208D44':'#D3E6BE'}`,
+                background:classifyMethod===m.id?'rgba(32,141,68,.08)':'white'}}>
+              <div style={{display:'flex',alignItems:'center',gap:8,color:classifyMethod===m.id?'#208D44':'#5F6D63'}}>
+                {m.icon}<span style={{fontSize:12,fontWeight:700,color:'#183A2A'}}>{m.label}</span>
+              </div>
+              <span style={{fontSize:10.5,color:'#849087',lineHeight:1.4}}>{m.desc}</span>
+            </button>
+          ))}
+        </div>
+
+        {classifyMethod==='ai' && (
+          <div style={{marginTop:14}}>
+            <label style={{fontSize:11,fontWeight:700,color:'#208D44',textTransform:'uppercase',letterSpacing:'.06em'}}>{t('ai_model_label')}</label>
+            <select className="select-field" style={{marginTop:8}} value={aiModel} onChange={e=>setAiModel(e.target.value)}>
+              {Object.entries(aiModels).length===0 && <option value={aiModel}>{aiModel}</option>}
+              {Object.entries(aiModels).map(([label,value])=>(
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {classifyMethod==='keywords' && (
+          <div style={{marginTop:14}}>
+            <label style={{fontSize:11,fontWeight:700,color:'#208D44',textTransform:'uppercase',letterSpacing:'.06em'}}>{t('keyword_rules_label')}</label>
+            <p style={{fontSize:11,color:'#849087',margin:'6px 0'}}>{t('keyword_rules_hint')}</p>
+            <textarea className="input-field" rows={4} style={{resize:'vertical',fontFamily:'monospace',fontSize:12}}
+              placeholder={t('keyword_rules_placeholder')}
+              value={keywordRulesText} onChange={e=>setKeywordRulesText(e.target.value)} />
+          </div>
+        )}
+      </div>
+
+      <div style={{display:'flex',gap:10}}>
+        <button className="btn-ghost" onClick={onBack}>{t('cancel')}</button>
+        <button className="btn-primary" style={{flex:1,height:44}} disabled={!folder} onClick={onNext}>{t('start_scan_btn')}</button>
+      </div>
+    </div>
+  );
+}
+/* 12 — PERMISSION */
+function PermissionScreen({folder,includeSubfolders,onConfirm,onCancel,t}) {
+  return (
+    <div className="fade-in" style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:32,background:'#F0EEE9'}}>
+      <div style={{background:'white',borderRadius:20,border:'1px solid #D3E6BE',boxShadow:'0 8px 32px rgba(5,89,52,.1)',padding:36,maxWidth:440,width:'100%'}}>
+        <div style={{width:56,height:56,background:'rgba(32,141,68,.1)',borderRadius:16,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',color:'#208D44',fontSize:24}}>{I.shield}</div>
+        <h2 style={{fontSize:20,fontWeight:800,color:'#055934',textAlign:'center',marginBottom:8}}>{t('permission_title')}</h2>
+        <p style={{fontSize:13,color:'#5F6D63',textAlign:'center',marginBottom:24,lineHeight:1.6}}>{t('permission_desc')}</p>
+        <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:24}}>
+          {[[t('selected_folder_label'),folder],[t('include_subfolders_label'),includeSubfolders?t('yes_value'):t('no_value')],[t('hidden_files_label'),t('always_ignored')],[t('system_files_label'),t('always_protected')]].map(([k,v])=>(
+            <div key={k} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'#F0EEE9',borderRadius:10,gap:10}}>
+              <span style={{fontSize:12,color:'#5F6D63',flexShrink:0}}>{k}</span>
+              <span style={{fontSize:12,fontWeight:700,color:'#183A2A',wordBreak:'break-all',textAlign:'right'}}>{v}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{display:'flex',gap:10}}>
+          <button className="btn-ghost" style={{flex:1}} onClick={onCancel}>{t('cancel')}</button>
+          <button className="btn-primary" style={{flex:1,height:44}} onClick={onConfirm}>{t('grant_access')}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+/* 13 — SCANNING */
+function ScanningScreen({api,includeSubfolders,onDone,onError,onCancel,t}) {
+  useEffect(()=>{
+    let cancelled = false;
+    api('scan_folder', includeSubfolders).then(r=>{
+      if (cancelled) return;
+      if (r && r.success) onDone(r);
+      else onError(t('scan_failed'));
+    }).catch(err=>{ if(!cancelled) onError(t('scan_failed')); });
+    return () => { cancelled = true; };
+  }, []);
+  return (
+    <div className="fade-in" style={{flex:1,padding:24,maxWidth:640,margin:'0 auto',width:'100%',background:'#F0EEE9',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:20}}>
+      <div style={{position:'relative',width:80,height:80}}>
+        <div style={{position:'absolute',inset:0,borderRadius:'50%',border:'4px solid #D3E6BE'}}/>
+        <div style={{position:'absolute',inset:0,borderRadius:'50%',border:'4px solid #208D44',borderTopColor:'transparent',animation:'spin 1s linear infinite'}}/>
+        <div style={{position:'absolute',inset:8,borderRadius:'50%',background:'rgba(32,141,68,.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24}}>{I.search}</div>
+      </div>
+      <h2 style={{fontSize:20,fontWeight:800,color:'#055934'}}>{t('scanning_title')}</h2>
+      <p style={{fontSize:12,color:'#849087',textAlign:'center'}}>{t('scanning_desc')}</p>
+      <button className="btn-danger" onClick={onCancel}>{I.x} {t('cancel')}</button>
+    </div>
+  );
+}
+/* 14 — AI CLASSIFICATION */
+function AIClassScreen({api,useAi,method,aiModel,keywordRules,onDone,onError,t}) {
+  const [processed,setProcessed] = useState(0);
+  const [total,setTotal] = useState(0);
+  const [currentName,setCurrentName] = useState('');
+
+  useEffect(()=>{
+    let cancelled = false;
+    const resolvedMethod = (useAi ? 'ai' : (method || 'extension'));
+    const batchSize = resolvedMethod === 'ai' ? 1 : 20;
+
+    async function run() {
+      const start = await api('classify_files_start', useAi, method || 'extension', aiModel, keywordRules || []).catch(err=>{
+        throw err;
+      });
+
+      if (cancelled) return;
+
+      if (!start || !start.success) {
+        onError(t('classification_failed'));
+        return;
+      }
+
+      setTotal(start.total || 0);
+
+      if (!start.total) {
+        onDone({success:true, results:[], count:0, duplicate_count:0});
+        return;
+      }
+
+      // eslint-disable-next-line no-constant-condition
+      while (!cancelled) {
+        const batch = await api('classify_files_batch', batchSize);
+
+        if (cancelled) return;
+
+        if (!batch || !batch.success) {
+          onError(t('classification_failed'));
+          return;
+        }
+
+        setProcessed(batch.processed || 0);
+        const lastResult = batch.results && batch.results.length
+          ? batch.results[batch.results.length - 1]
+          : null;
+        if (lastResult) setCurrentName(lastResult.name || '');
+
+        if (batch.done) {
+          onDone({
+            success: true,
+            results: batch.all_results || [],
+            count: (batch.all_results || []).length,
+            duplicate_count: batch.duplicate_count || 0,
+          });
+          return;
+        }
+      }
+    }
+
+    run().catch(err=>{ if (!cancelled) onError(t('classification_failed')); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const pct = total > 0 ? Math.min(100, Math.round((processed/total)*100)) : 0;
+
+  return (
+    <div className="fade-in" style={{flex:1,padding:24,maxWidth:640,margin:'0 auto',width:'100%',background:'#F0EEE9',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16}}>
+      <div style={{position:'relative',width:80,height:80}}>
+        <div style={{position:'absolute',inset:0,borderRadius:'50%',border:'4px solid #D3E6BE'}}/>
+        <div style={{position:'absolute',inset:0,borderRadius:'50%',border:'4px solid #86C242',borderTopColor:'transparent',animation:'spin 0.8s linear infinite'}}/>
+        <div style={{position:'absolute',inset:8,borderRadius:'50%',background:'rgba(32,141,68,.08)',display:'flex',alignItems:'center',justifyContent:'center',color:'#208D44'}}>{I.brain}</div>
+      </div>
+      <h2 style={{fontSize:20,fontWeight:800,color:'#055934'}}>{t('ai_title')}</h2>
+      <p style={{fontSize:12,color:'#5F6D63',maxWidth:400,textAlign:'center',lineHeight:1.6}}>{t('ai_desc')}</p>
+
+      <div style={{width:'100%',maxWidth:360}}>
+        <div className="progress-bar">
+          <div className="progress-fill" style={{width:`${pct}%`}}/>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',marginTop:8,fontSize:11,color:'#5F6D63'}}>
+          <span>{processed} / {total} {t('files') || 'files'}</span>
+          <span style={{fontWeight:700,color:'#208D44'}}>{pct}%</span>
+        </div>
+        {currentName && (
+          <div style={{marginTop:6,fontSize:11,color:'#849087',textAlign:'center',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+            {currentName}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+/* 15 — SUMMARY */
+function SummaryScreen({classifyResult,onReview,onContinue,onScanAgain,onCancel,t}) {
+  const results = (classifyResult && classifyResult.results) || [];
+  const total = results.length;
+  const duplicates = results.filter(f=>f.is_duplicate).length;
+  const review = results.filter(f=>f.requires_review).length;
+  const byCat = {};
+  results.forEach(f=>{ const c=f.category||'Other'; byCat[c]=(byCat[c]||0)+1; });
+  const cats = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  const colors = ['#208D44','#2563eb','#16a34a','#d97706','#0d9488','#7c3aed','#6b7280','#849087'];
+  return (
+    <div className="fade-in" style={{flex:1,padding:24,maxWidth:760,margin:'0 auto',width:'100%',background:'#F0EEE9'}}>
+      <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:20}}>
+        <div style={{width:48,height:48,background:'#dcfce7',borderRadius:14,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22}}>✅</div>
+        <div>
+          <h2 style={{fontSize:20,fontWeight:800,color:'#055934'}}>{t('summary_title')}</h2>
+          <p style={{fontSize:12,color:'#5F6D63',marginTop:2}}>{t('summary_subtitle')}</p>
+        </div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:18}}>
+        {[['📁 '+t('stat_total_files'),total,'#208D44'],['⧉ '+t('stat_duplicates'),duplicates,'#d97706'],['👁 '+t('stat_for_review'),review,'#208D44']].map(([lbl,val,col])=>(
+          <div key={lbl} style={{background:'white',borderRadius:14,border:'1px solid #D3E6BE',padding:14,textAlign:'center'}}>
+            <div style={{fontSize:22,fontWeight:800,color:col}}>{val}</div>
+            <div style={{fontSize:10,color:'#849087',marginTop:3,lineHeight:1.3}}>{lbl}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{background:'white',borderRadius:16,border:'1px solid #D3E6BE',padding:20,marginBottom:18}}>
+        <div style={{fontSize:11,fontWeight:700,color:'#208D44',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:14}}>{t('category_breakdown_title')}</div>
+        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+          {cats.length===0 && <div style={{fontSize:12,color:'#849087'}}>{t('no_files_found')}</div>}
+          {cats.map(([name,cnt],i)=>(
+            <div key={name} style={{display:'flex',alignItems:'center',gap:12}}>
+              <span style={{fontSize:12,color:'#5F6D63',width:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{name}</span>
+              <div style={{flex:1,height:8,background:'#F0EEE9',borderRadius:9999,overflow:'hidden'}}>
+                <div style={{width:`${total?Math.round(cnt/total*100):0}%`,height:'100%',background:colors[i%colors.length],borderRadius:9999}}/>
+              </div>
+              <span style={{fontSize:12,fontWeight:700,color:'#183A2A',width:28,textAlign:'right'}}>{cnt}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+        <button className="btn-ghost" onClick={onCancel}>{t('cancel')}</button>
+        <button className="btn-outline" onClick={onReview}>👁 {t('review_results_btn')}</button>
+        <button className="btn-outline" onClick={onScanAgain}>🔄 {t('scan_again')}</button>
+        <button className="btn-primary" style={{flex:1,height:42}} disabled={total===0} onClick={onContinue}>{t('continue')}</button>
+      </div>
+    </div>
+  );
+}
+/* 16 — REVIEW */
+function ReviewScreen({api,classifyResult,setClassifyResult,onContinue,onBack,t}) {
+  const [filter,setFilter] = useState('all');
+  const [categories,setCategories] = useState({});
+  useEffect(()=>{ api('get_categories').then(r=>{ if(r&&r.success) setCategories(r.categories||{}); }).catch(()=>{}); }, []);
+  const results = (classifyResult && classifyResult.results) || [];
+  const filtered = results.filter(f=>{
+    if (filter==='Needs Review') return f.requires_review;
+    if (filter==='Duplicates') return f.is_duplicate;
+    return true;
+  });
+  const setCategory = (path, category, subcategory) => {
+    api('update_classification', path, category, subcategory).then(r=>{
+      if (r && r.success) {
+        setClassifyResult(prev => {
+          if (!prev) return prev;
+          const results = prev.results.map(f => f.path===path ? {...f, category, subcategory, requires_review:false, method:'manual'} : f);
+          return {...prev, results};
+        });
+      }
+    }).catch(()=>{});
+  };
+  const catNames = Object.keys(categories);
+  return (
+    <div className="fade-in" style={{flex:1,padding:24,maxWidth:900,margin:'0 auto',width:'100%',background:'#F0EEE9'}}>
+      <div style={{marginBottom:20}}>
+        <h2 style={{fontSize:20,fontWeight:800,color:'#055934'}}>{t('review_title')}</h2>
+        <p style={{fontSize:12,color:'#5F6D63',marginTop:3}}>{results.filter(f=>f.requires_review).length} file(s) flagged for review — change the category if needed</p>
+      </div>
+      <div style={{display:'flex',gap:8,marginBottom:14,flexWrap:'wrap'}}>
+        {['All','Needs Review','Duplicates'].map(f=>(
+          <button key={f} onClick={()=>setFilter(f)} style={{padding:'6px 14px',borderRadius:10,fontSize:12,fontWeight:700,border:'1.5px solid',fontFamily:'inherit',cursor:'pointer',background:filter===f?'#208D44':'white',color:filter===f?'white':'#5F6D63',borderColor:filter===f?'#208D44':'#D3E6BE'}}>{f}</button>
+        ))}
+      </div>
+      <div style={{background:'white',borderRadius:16,border:'1px solid #D3E6BE',overflow:'hidden',marginBottom:18,maxHeight:420,overflowY:'auto'}}>
+        <table>
+          <thead><tr><th>{t('col_file_name')}</th><th>{t('col_category')}</th><th>{t('col_subcategory')}</th><th>{t('col_confidence')}</th><th>{t('col_flags')}</th></tr></thead>
+          <tbody>
+            {filtered.map((f,i)=>(
+              <tr key={f.path||i}>
+                <td style={{fontFamily:'monospace',fontWeight:600}}>{f.name}</td>
+                <td>
+                  {catNames.length ? (
+                    <select className="select-field" style={{padding:'4px 8px',fontSize:11}} value={f.category} onChange={e=>setCategory(f.path, e.target.value, (categories[e.target.value]&&categories[e.target.value][0])||f.subcategory)}>
+                      {catNames.map(c=><option key={c} value={c}>{c}</option>)}
+                    </select>
+                  ) : (
+                    <span className="badge" style={{background:'rgba(32,141,68,.12)',color:'#208D44'}}>{f.category}</span>
+                  )}
+                </td>
+                <td style={{color:'#5F6D63'}}>{f.subcategory}</td>
+                <td style={{fontWeight:700,color:(f.confidence*100)>=70?'#16a34a':'#d97706'}}>{Math.round((f.confidence||0)*100)}%</td>
+                <td>
+                  {f.requires_review && <span className="badge" style={{background:'#fef3c7',color:'#92400e',marginRight:4}}>{t('flag_review')}</span>}
+                  {f.is_duplicate && <span className="badge" style={{background:'#dbeafe',color:'#1e40af'}}>{t('flag_duplicate')}</span>}
+                </td>
+              </tr>
+            ))}
+            {filtered.length===0 && <tr><td colSpan={5} style={{textAlign:'center',color:'#849087'}}>{t('no_files_in_view')}</td></tr>}
+          </tbody>
+        </table>
+      </div>
+      <div style={{display:'flex',gap:10}}>
+        <button className="btn-outline" onClick={onBack}>{t('back')}</button>
+        <button className="btn-primary" style={{flex:1,height:42}} onClick={onContinue}>{t('continue_to_preview')}</button>
+      </div>
+    </div>
+  );
+}
+/* 17 — PREVIEW */
+function PreviewScreen({folder,classifyResult,excluded,setExcluded,onOrganize,onBack,t}) {
+  const [q,setQ] = useState('');
+  const results = (classifyResult && classifyResult.results) || [];
+  const shown = results.filter(f=>f.name.toLowerCase().includes(q.toLowerCase()));
+  const toMove = results.filter(f=>!excluded.has(f.path)).length;
+  const toggle = path => setExcluded(prev => {
+    const next = new Set(prev);
+    if (next.has(path)) next.delete(path); else next.add(path);
+    return next;
+  });
+  return (
+    <div className="fade-in" style={{flex:1,padding:24,maxWidth:1000,margin:'0 auto',width:'100%',background:'#F0EEE9'}}>
+      <div style={{marginBottom:16}}>
+        <h2 style={{fontSize:20,fontWeight:800,color:'#055934'}}>{t('preview_title')}</h2>
+        <p style={{fontSize:12,color:'#5F6D63',marginTop:3}}>{t('preview_subtitle')}</p>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:16}}>
+        {[[t('stat_total_files'),results.length,'#208D44'],[t('stat_files_to_move'),toMove,'#16a34a'],[t('stat_excluded'),results.length-toMove,'#6b7280']].map(([l,v,c])=>(
+          <div key={l} style={{background:'white',borderRadius:12,border:'1px solid #D3E6BE',padding:12,textAlign:'center'}}>
+            <div style={{fontSize:20,fontWeight:800,color:c}}>{v}</div>
+            <div style={{fontSize:10,color:'#849087'}}>{l}</div>
+          </div>
+        ))}
+      </div>
+      <input className="input-field" placeholder={t('search')} value={q} onChange={e=>setQ(e.target.value)} style={{marginBottom:12}}/>
+      <div style={{background:'white',borderRadius:16,border:'1px solid #D3E6BE',overflow:'hidden',marginBottom:18,maxHeight:420,overflowY:'auto'}}>
+        <table>
+          <thead><tr><th></th><th>{t('col_file_name')}</th><th>{t('col_category')}</th><th>{t('col_destination')}</th></tr></thead>
+          <tbody>
+            {shown.map((f,i)=>(
+              <tr key={f.path||i} style={{opacity:excluded.has(f.path)?0.45:1}}>
+                <td><Cb checked={!excluded.has(f.path)} onChange={()=>toggle(f.path)} id={`inc-${i}`}/></td>
+                <td style={{fontFamily:'monospace',fontWeight:600}}>{f.name}</td>
+                <td><span className="badge" style={{background:'rgba(32,141,68,.12)',color:'#208D44'}}>{f.category}/{f.subcategory}</span></td>
+                <td style={{color:'#849087',fontSize:11,wordBreak:'break-all'}}>{folder}/{f.category}/{f.subcategory}</td>
+              </tr>
+            ))}
+            {shown.length===0 && <tr><td colSpan={4} style={{textAlign:'center',color:'#849087'}}>{t('no_files_match')}</td></tr>}
+          </tbody>
+        </table>
+      </div>
+      <div style={{display:'flex',gap:10}}>
+        <button className="btn-ghost" onClick={onBack}>{t('back')}</button>
+        <button className="btn-primary" style={{flex:1,height:42}} disabled={toMove===0} onClick={onOrganize}>{t('organize_files_btn')}</button>
+      </div>
+    </div>
+  );
+}
+/* 18 — CONFIRMATION */
+function ConfirmScreen({folder,classifyResult,excluded,onConfirm,onBack,onCancel,t}) {
+  const results = (classifyResult && classifyResult.results) || [];
+  const toMove = results.filter(f=>!excluded.has(f.path)).length;
+  return (
+    <div className="fade-in" style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:32,background:'#F0EEE9'}}>
+      <div style={{background:'white',borderRadius:20,border:'1px solid #D3E6BE',boxShadow:'0 8px 32px rgba(5,89,52,.1)',padding:36,maxWidth:440,width:'100%'}}>
+        <div style={{width:56,height:56,background:'rgba(32,141,68,.1)',borderRadius:16,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',fontSize:28}}>🗂</div>
+        <h2 style={{fontSize:20,fontWeight:800,color:'#055934',textAlign:'center',marginBottom:8}}>{t('confirmation_title')}</h2>
+        <p style={{fontSize:13,color:'#5F6D63',textAlign:'center',marginBottom:22,lineHeight:1.6}}>{t('confirmation_desc')}</p>
+        <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:24}}>
+          {[[t('folder_label'),folder],[t('files_to_move_label'),toMove],[t('excluded_label'),results.length-toMove],[t('undo_available_label'),'✓ '+t('yes_value')]].map(([k,v])=>(
+            <div key={k} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'#F0EEE9',borderRadius:10,gap:10}}>
+              <span style={{fontSize:12,color:'#5F6D63',flexShrink:0}}>{k}</span>
+              <span style={{fontSize:12,fontWeight:700,color:String(v).startsWith('✓')?'#16a34a':'#183A2A',wordBreak:'break-all',textAlign:'right'}}>{v}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{display:'flex',gap:10}}>
+          <button className="btn-ghost" onClick={onBack} style={{fontSize:12}}>{t('back_to_preview')}</button>
+          <button className="btn-danger" onClick={onCancel}>{t('cancel')}</button>
+          <button className="btn-primary" style={{flex:1,height:42}} onClick={onConfirm}>{t('confirm_organize_btn')}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+/* 19 — ORGANISING */
+function OrganisingScreen({api,excluded,onDone,onError,t}) {
+  useEffect(()=>{
+    let cancelled = false;
+    api('organize_files', Array.from(excluded)).then(r=>{
+      if (cancelled) return;
+      if (r && r.success) onDone(r);
+      else onError(t('organize_failed'));
+    }).catch(err=>{ if(!cancelled) onError(t('organize_failed')); });
+    return () => { cancelled = true; };
+  }, []);
+  return (
+    <div className="fade-in" style={{flex:1,padding:24,maxWidth:640,margin:'0 auto',width:'100%',background:'#F0EEE9',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16}}>
+      <div style={{position:'relative',width:80,height:80}}>
+        <div style={{position:'absolute',inset:0,borderRadius:'50%',border:'4px solid #D3E6BE'}}/>
+        <div style={{position:'absolute',inset:0,borderRadius:'50%',border:'4px solid #208D44',borderTopColor:'transparent',animation:'spin 1s linear infinite'}}/>
+      </div>
+      <h2 style={{fontSize:20,fontWeight:800,color:'#055934'}}>{t('organizing_title')}</h2>
+      <p style={{fontSize:12,color:'#849087'}}>{t('organizing_desc')}</p>
+    </div>
+  );
+}
+/* 20 — RESULTS */
+function ResultsScreen({orgResult,onOpenFolder,onReport,onUndo,onDashboard,onFinish,t}) {
+  const moved = (orgResult && orgResult.moved_count) || 0;
+  const errors = (orgResult && orgResult.error_count) || 0;
+  const timeTaken = (orgResult && typeof orgResult.time_taken === 'number') ? `${orgResult.time_taken.toFixed(1)}s` : '—';
+  return (
+    <div className="fade-in" style={{flex:1,padding:24,maxWidth:760,margin:'0 auto',width:'100%',background:'#F0EEE9'}}>
+      <div style={{textAlign:'center',marginBottom:24}}>
+        <div style={{width:64,height:64,background:'#dcfce7',borderRadius:18,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',fontSize:32}}>✅</div>
+        <h2 style={{fontSize:24,fontWeight:800,color:'#055934',marginBottom:8}}>{t('results_title')}</h2>
+        <p style={{fontSize:13,color:'#5F6D63',maxWidth:440,margin:'0 auto',lineHeight:1.7}}>{t('results_sub')}</p>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:24}}>
+        {[['✅ '+t('result_organized_label'),moved,'#16a34a'],['⚠ '+t('result_errors_label'),errors,errors>0?'#dc2626':'#6b7280'],['⏱ '+t('result_time_label'),timeTaken,'#0d9488']].map(([lbl,val,col])=>(
+          <div key={lbl} style={{background:'white',borderRadius:14,border:'1px solid #D3E6BE',padding:14,textAlign:'center'}}>
+            <div style={{fontSize:20,fontWeight:800,color:col}}>{val}</div>
+            <div style={{fontSize:10,color:'#849087',marginTop:3,lineHeight:1.3}}>{lbl}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:10}}>
+        <button className="btn-ghost" onClick={onOpenFolder}>📂 {t('open_folder')}</button>
+        <button className="btn-ghost" onClick={onReport}>{I.report} {t('view_report')}</button>
+        <button className="btn-danger" onClick={onUndo}>{I.undo} {t('undo')}</button>
+        <button className="btn-outline" onClick={onDashboard}>🏠 {t('dashboard_btn')}</button>
+        <button className="btn-primary" style={{flex:1,height:42}} onClick={onFinish}>{t('finish')}</button>
+      </div>
+    </div>
+  );
+}
+/* 21 — REPORT */
+function ReportScreen({report,folder,onBack,onDashboard,t}) {
+  const [filter,setFilter] = useState('All');
+  const ops = (report && report.operations) || [];
+  const errs = (report && report.errors) || [];
+  const rows = [
+    ...ops.map(o => ({name:o.file_name || (o.new_path||'').split(/[\\/]/).pop(), orig:o.original_path, dest:o.new_path, status:'Success'})),
+    ...errs.map(e => ({name:(e.path||'').split(/[\\/]/).pop(), orig:e.path, dest:'—', status:'Failed', reason:e.error})),
+  ];
+  const shown = filter==='All' ? rows : rows.filter(r=>r.status===filter);
+  const when = report && report.timestamp ? new Date(report.timestamp*1000).toLocaleString() : '';
+  return (
+    <div className="fade-in" style={{flex:1,padding:24,maxWidth:1000,margin:'0 auto',width:'100%',background:'#F0EEE9'}}>
+      <div style={{marginBottom:16}}>
+        <h2 style={{fontSize:20,fontWeight:800,color:'#055934'}}>{t('report_title')}</h2>
+        {when && <p style={{fontSize:11,color:'#849087',marginTop:3}}>{when}</p>}
+      </div>
+      <div style={{background:'white',borderRadius:16,border:'1px solid #D3E6BE',padding:18,marginBottom:14}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:14}}>
+          {[[t('report_folder_label'),(report&&report.folder)||folder],[t('report_files_moved_label'),(report&&report.moved_count)||0],[t('report_errors_label'),(report&&report.error_count)||0]].map(([k,v])=>(
+            <div key={k}><div style={{fontSize:10,color:'#849087',marginBottom:2}}>{k}</div><div style={{fontSize:12,fontWeight:700,color:'#183A2A',wordBreak:'break-all'}}>{v}</div></div>
+          ))}
+        </div>
+      </div>
+      <div style={{display:'flex',gap:8,marginBottom:10,flexWrap:'wrap'}}>
+        {[['All',t('filter_all')],['Success',t('filter_success')],['Failed',t('filter_failed')]].map(([f,lbl])=>(
+          <button key={f} onClick={()=>setFilter(f)} style={{padding:'5px 12px',borderRadius:8,fontSize:11,fontWeight:700,border:'1.5px solid',fontFamily:'inherit',cursor:'pointer',background:filter===f?'#208D44':'white',color:filter===f?'white':'#5F6D63',borderColor:filter===f?'#208D44':'#D3E6BE'}}>{lbl}</button>
+        ))}
+      </div>
+      <div style={{background:'white',borderRadius:16,border:'1px solid #D3E6BE',overflow:'hidden',marginBottom:16,maxHeight:420,overflowY:'auto'}}>
+        <table>
+          <thead><tr>{[t('col_file_name'),t('col_original_path'),t('col_destination_reason'),t('col_status')].map(h=><th key={h}>{h}</th>)}</tr></thead>
+          <tbody>
+            {shown.map((r,i)=>(
+              <tr key={i}>
+                <td style={{fontFamily:'monospace',fontSize:11}}>{r.name}</td>
+                <td style={{color:'#849087',fontSize:10,wordBreak:'break-all'}}>{r.orig}</td>
+                <td style={{color:'#849087',fontSize:10,wordBreak:'break-all'}}>{r.status==='Failed'?r.reason:r.dest}</td>
+                <td><span className="badge" style={{background:r.status==='Success'?'#dcfce7':'#fee2e2',color:r.status==='Success'?'#166534':'#991b1b',fontSize:10}}>{r.status==='Success'?t('status_success'):t('status_failed')}</span></td>
+              </tr>
+            ))}
+            {shown.length===0 && <tr><td colSpan={4} style={{textAlign:'center',color:'#849087'}}>{t('no_records')}</td></tr>}
+          </tbody>
+        </table>
+      </div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:10}}>
+        <button className="btn-outline" onClick={onBack}>{t('back_to_results')}</button>
+        <button className="btn-primary" style={{flex:1,height:42}} onClick={onDashboard}>🏠 {t('dashboard_btn')}</button>
+      </div>
+    </div>
+  );
+}
+/* 22 — HISTORY */
+function HistoryScreen({api,history,refresh,onView,notify,t}) {
+  useEffect(()=>{ refresh(); }, []);
+  const restore = id => {
+    api('restore_from_history', id).then(r=>{
+      if (r && r.success) { notify(t.f('restored_files_msg', {n: r.restored_count})); refresh(); }
+      else { notify(t('restore_failed_msg')); }
+    }).catch(()=>notify(t('restore_failed_msg')));
+  };
+  return (
+    <div className="fade-in" style={{flex:1,padding:24,maxWidth:860,margin:'0 auto',width:'100%',background:'#F0EEE9'}}>
+      <h2 style={{fontSize:20,fontWeight:800,color:'#055934',marginBottom:20}}>{t('history_title')}</h2>
+      {history.length===0 && <p style={{fontSize:13,color:'#849087'}}>{t('no_activity_desc')}</p>}
+      <div style={{display:'flex',flexDirection:'column',gap:12}}>
+        {[...history].reverse().map((h,i)=>(
+          <div key={h.id||i} style={{background:'white',borderRadius:16,border:'1px solid #D3E6BE',padding:'18px 20px'}}>
+            <div style={{display:'flex',alignItems:'flex-start',gap:14,flexWrap:'wrap'}}>
+              <div style={{width:42,height:42,background:'rgba(32,141,68,.1)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',color:'#208D44',flexShrink:0}}>{I.history}</div>
+              <div style={{flex:1,minWidth:200}}>
+                <div style={{fontWeight:700,fontSize:14,color:'#183A2A',wordBreak:'break-all'}}>{h.folder}</div>
+                <div style={{fontSize:11,color:'#849087',marginTop:2}}>{h.timestamp ? new Date(h.timestamp*1000).toLocaleString() : ''}</div>
+                <div style={{display:'flex',gap:16,marginTop:8,fontSize:11,color:'#5F6D63'}}>
+                  <span>✓ {h.moved_count||0} {t('history_organized_suffix')}</span>
+                  {h.error_count>0 && <span>⚠ {h.error_count} {t('history_errors_suffix')}</span>}
+                </div>
+              </div>
+              <div style={{display:'flex',gap:8,flexShrink:0}}>
+                <button className="btn-outline" style={{fontSize:11,padding:'5px 12px',height:'auto'}} onClick={()=>onView(h)}>{t('view_report_btn')}</button>
+                <button style={{background:'#fffbeb',border:'1.5px solid #f59e0b',color:'#92400e',borderRadius:8,fontSize:11,padding:'5px 12px',cursor:'pointer',fontFamily:'inherit',fontWeight:600}} onClick={()=>restore(h.id)}>{t('restore_btn')}</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+/* 23 — SETTINGS */
+function SettingsScreen({settings,setSettings,lang,setLang,onBack,t}) {
+  const tgl=k=>setSettings(s=>({...s,[k]:!s[k]}));
+  return (
+    <div className="fade-in" style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',background:'#F0EEE9'}}>
+      <div style={{background:'#055934',padding:'0 20px',height:56,display:'flex',alignItems:'center',gap:14,flexShrink:0}}>
+        <button onClick={onBack} style={{width:32,height:32,borderRadius:'50%',background:'rgba(255,255,255,.1)',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'white'}}>{I.back}</button>
+        <div><div style={{color:'white',fontWeight:700,fontSize:14}}>{t('settings')}</div><div style={{color:'#D3E6BE',fontSize:11}}>{t('settings_subtitle')}</div></div>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:24}}>
+        <div style={{maxWidth:800,margin:'0 auto',display:'flex',flexDirection:'column',gap:18}}>
+          <div className="section-card">
+            <div className="section-title">{t('general')}</div>
+            <div className="setting-row">
+              <div className="setting-icon">🌐</div>
+              <div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:'#183A2A'}}>{t('language_label')}</div><div style={{fontSize:11,color:'#66756B',marginTop:2}}>{t('language_desc')}</div></div>
+              <div style={{display:'flex',background:'#F0EEE9',borderRadius:10,padding:4,border:'1px solid #D3E6BE',gap:4}}>
+                {[['en','English'],['ar','العربية']].map(([l,lbl])=>(
+                  <button key={l} onClick={()=>setLang(l)} style={{padding:'5px 14px',borderRadius:7,fontSize:11,fontWeight:700,border:'none',fontFamily:'inherit',cursor:'pointer',background:lang===l?'#208D44':'transparent',color:lang===l?'white':'#5F6D63'}}>{lbl}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="section-card">
+            <div className="section-title">{t('ai_settings')}</div>
+            <div className="setting-row"><div className="setting-icon">🧠</div><div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:'#183A2A'}}>{t('ai_classification_label')}</div><div style={{fontSize:11,color:'#66756B'}}>{t('ai_classification_desc')}</div></div><Toggle checked={settings.ai} onChange={()=>tgl('ai')}/></div>
+          </div>
+
+          <div className="section-card">
+            <div className="section-title">{t('file_safety')}</div>
+            <div className="setting-row"><div className="setting-icon">🛡</div><div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:'#183A2A'}}>{t('system_hidden_files_label')}</div><div style={{fontSize:11,color:'#66756B'}}>{t('system_hidden_files_desc')}</div></div></div>
+            <div className="setting-row"><div className="setting-icon">↩</div><div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:'#183A2A'}}>{t('undo_label')}</div><div style={{fontSize:11,color:'#66756B'}}>{t('undo_desc')}</div></div></div>
+          </div>
+
+          <div style={{display:'flex',justifyContent:'flex-end',gap:12,paddingBottom:24}}>
+            <button className="btn-primary" style={{padding:'10px 36px'}} onClick={onBack}>{t('save_changes')}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+/* 24 — NOTIFICATIONS */
+function NotificationsScreen({t}) {
+  return (
+    <div className="fade-in" style={{flex:1,padding:24,maxWidth:640,margin:'0 auto',width:'100%',background:'#F0EEE9'}}>
+      <h2 style={{fontSize:20,fontWeight:800,color:'#055934',marginBottom:20}}>{t('notifications_title')}</h2>
+      <div style={{background:'white',borderRadius:16,border:'1px solid #D3E6BE',padding:40,textAlign:'center',color:'#849087',fontSize:13}}>
+        {t('no_notifications')}
+      </div>
+    </div>
+  );
+}
+/* 25 — HELP */
+function HelpScreen({t}) {
+  const [open,setOpen]=useState(null);
+  const sections=[
+    ['how',t('help_how_title'),t('help_how_body')],
+    ['permission',t('help_permission_title'),t('help_permission_body')],
+    ['ai',t('help_ai_title'),t('help_ai_body')],
+    ['preview',t('help_preview_title'),t('help_preview_body')],
+    ['undo',t('help_undo_title'),t('help_undo_body')],
+    ['reports',t('help_reports_title'),t('help_reports_body')],
+    ['privacy',t('help_privacy_title'),t('help_privacy_body')],
+    ['faq',t('help_faq_title'),t('help_faq_body')],
+  ];
+  return (
+    <div className="fade-in" style={{flex:1,padding:24,maxWidth:760,margin:'0 auto',width:'100%',background:'#F0EEE9'}}>
+      <h2 style={{fontSize:20,fontWeight:800,color:'#055934',marginBottom:20}}>{t('help_title')}</h2>
+      <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:24}}>
+        {sections.map(([id,title,content])=>(
+          <div key={id} style={{background:'white',borderRadius:14,border:'1px solid #D3E6BE',overflow:'hidden'}}>
+            <button onClick={()=>setOpen(open===id?null:id)} style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',padding:'14px 18px',fontSize:13,fontWeight:700,color:'#183A2A',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',textAlign:'left'}}>
+              <span>{title}</span>
+              <span style={{color:'#849087',fontSize:18}}>{open===id?'▲':'▼'}</span>
+            </button>
+            {open===id && <div style={{padding:'0 18px 16px',fontSize:12,color:'#5F6D63',lineHeight:1.7,borderTop:'1px solid #ECEFE8',paddingTop:12,whiteSpace:'pre-line'}}>{content}</div>}
+          </div>
+        ))}
+      </div>
+      <div style={{background:'white',borderRadius:16,border:'1px solid #D3E6BE',padding:24}}>
+        <div style={{fontWeight:700,color:'#055934',fontSize:15,marginBottom:16,display:'flex',alignItems:'center',gap:8}}>{I.info} {t('about_title')}</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+          {[[t('about_system_name'),'AI-DeskClean'],[t('about_version'),'1.0.0'],[t('about_processing'),t('about_processing_v')],[t('about_ai_engine'),t('about_ai_engine_v')],[t('about_database'),t('about_database_v')],[t('about_language'),t('about_language_v')],[t('about_university'),t('about_university_v')],[t('about_faculty'),t('about_faculty_v')]].map(([k,v])=>(
+            <div key={k} style={{background:'#F0EEE9',borderRadius:12,padding:12}}>
+              <div style={{fontSize:10,color:'#849087',marginBottom:2}}>{k}</div>
+              <div style={{fontSize:12,fontWeight:700,color:'#183A2A'}}>{v}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* 26 — REPORTS (cumulative, across every organize operation ever run) */
+function ReportsScreen({api,t}) {
+  const [report,setReport] = useState(null);
+  const [loading,setLoading] = useState(true);
+  useEffect(()=>{
+    let cancelled = false;
+    api('get_reports').then(r=>{
+      if (cancelled) return;
+      setReport(r && r.success ? r.report : null);
+      setLoading(false);
+    }).catch(()=>{ if(!cancelled){ setReport(null); setLoading(false); } });
+    return () => { cancelled = true; };
+  }, []);
+
+  const METHOD_LABEL_KEYS = {extension:'method_extension', ai:'method_ai', keywords:'method_keywords', age:'method_age', manual:'method_manual'};
+  const methodLabel = m => t(METHOD_LABEL_KEYS[m] || 'method_manual');
+
+  const hasData = report && report.has_data;
+
+  return (
+    <div className="fade-in" style={{flex:1,padding:24,maxWidth:1000,margin:'0 auto',width:'100%',background:'#F0EEE9'}}>
+      <div style={{marginBottom:20}}>
+        <h2 style={{fontSize:20,fontWeight:800,color:'#055934'}}>{t('reports_title')}</h2>
+        <p style={{fontSize:12,color:'#5F6D63',marginTop:3}}>{t('reports_sub')}</p>
+      </div>
+
+      {!loading && !hasData && (
+        <div style={{background:'white',borderRadius:16,border:'1px solid #D3E6BE',padding:40,textAlign:'center',color:'#849087',fontSize:13}}>
+          {t('reports_empty')}
+        </div>
+      )}
+
+      {!loading && hasData && (
+        <>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:14,marginBottom:18}}>
+            <div style={{background:'white',borderRadius:14,border:'1px solid #D3E6BE',padding:16,textAlign:'center'}}>
+              <div style={{fontSize:24,fontWeight:800,color:'#208D44'}}>{report.total_files}</div>
+              <div style={{fontSize:11,color:'#849087',marginTop:3}}>{t('reports_total_files')}</div>
+            </div>
+            <div style={{background:'white',borderRadius:14,border:'1px solid #D3E6BE',padding:16,textAlign:'center'}}>
+              <div style={{fontSize:24,fontWeight:800,color:'#d97706'}}>{report.total_operations}</div>
+              <div style={{fontSize:11,color:'#849087',marginTop:3}}>{t('reports_total_operations')}</div>
+            </div>
+          </div>
+
+          <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:14}}>
+            <ReportPanel title={t('reports_by_category')} rows={report.by_category.map(r=>({name:r.name, value:r.count}))}/>
+            <ReportPanel title={t('reports_by_method')} rows={report.by_method.map(r=>({name:methodLabel(r.method), value:r.count}))}/>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+function ReportPanel({title,rows}) {
+  const maxValue = Math.max(1, ...rows.map(r=>r.value));
+  return (
+    <div style={{background:'white',borderRadius:16,border:'1px solid #D3E6BE',padding:20}}>
+      <div style={{fontSize:13,fontWeight:800,color:'#183A2A',marginBottom:14}}>{title}</div>
+      <div style={{display:'flex',flexDirection:'column',gap:12}}>
+        {rows.map(r=>(
+          <div key={r.name}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:5}}>
+              <span style={{color:'#5F6D63',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'70%'}}>{r.name}</span>
+              <span style={{fontWeight:700,color:'#208D44'}}>{r.value}</span>
+            </div>
+            <div style={{height:6,background:'#F0EEE9',borderRadius:9999,overflow:'hidden'}}>
+              <div style={{width:`${Math.max(4,Math.round(r.value/maxValue*100))}%`,height:'100%',background:'#208D44',borderRadius:9999}}/>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Mount ─────────────────────────────────────────────────────── */
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>
