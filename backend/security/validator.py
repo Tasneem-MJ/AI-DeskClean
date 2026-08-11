@@ -8,6 +8,7 @@ DANGEROUS_ROOTS = {
     "/",
     "/system",
     "/windows",
+    "/applications",
 }
 
 
